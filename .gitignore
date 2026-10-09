@@ -1,0 +1,26 @@
+# Xcode
+*.xcodeproj
+!*.xcodeproj/.keep
+xcuserdata/
+DerivedData/
+build/
+*.xcresult
+.swiftpm/
+.build/
+Package.resolved.bak
+
+# Secrets and local configuration — never commit
+Config/Secrets.xcconfig
+.env
+.env.*
+!.env.example
+*.p8
+*.pem
+
+# Node (backend test harness)
+node_modules/
+supabase/.temp/
+supabase/.branches/
+
+# macOS
+.DS_Store

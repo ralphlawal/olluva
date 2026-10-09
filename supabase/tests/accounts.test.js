@@ -1,0 +1,253 @@
+import { after, before, describe, test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mediaPath, startDatabase } from './support/db.js';
+
+let db;
+before(async () => { db = await startDatabase(); });
+after(async () => { await db?.stop(); });
+
+const TOKEN = (seed) => seed.repeat(64).slice(0, 64);
+
+describe('entitlements', () => {
+  test('clients cannot create, alter or extend a subscription', async () => {
+    const { a } = await db.createCouple();
+    await db.rejects(
+      a, `insert into public.subscriptions (original_transaction_id, user_id, product_id, status, environment) values ('x', $1, 'p', 'active', 'Production')`,
+      [a], /permission denied/,
+    );
+    const real = await db.makePremium(a, { status: 'expired', expires: `now() - interval '1 day'` });
+    await db.rejects(a, `update public.subscriptions set status = 'active', expires_at = now() + interval '10 years'`, [], /permission denied/);
+    await db.rejects(a, 'delete from public.subscriptions', [], /permission denied/);
+    await db.rejects(
+      a, `select public.record_subscription($1, $2, 'p', 'active', now() + interval '1 year', true, 'Production', 't')`,
+      [real, a], /permission denied/,
+    );
+    assert.equal((await db.call(a, 'select public.get_entitlement()')).is_premium, false);
+  });
+
+  test('one partner\'s subscription makes the couple premium, and each sees why', async () => {
+    const { a, b } = await db.createCouple();
+    assert.equal((await db.call(a, 'select public.get_entitlement()')).is_premium, false);
+    await db.makePremium(a);
+    const mine = await db.call(a, 'select public.get_entitlement()');
+    const theirs = await db.call(b, 'select public.get_entitlement()');
+    assert.deepEqual([mine.is_premium, mine.source], [true, 'self']);
+    assert.deepEqual([theirs.is_premium, theirs.source, theirs.expires_at], [true, 'partner', null]);
+    assert.equal(theirs.memories_limit, 2000);
+    // The partner cannot see the purchase record itself.
+    assert.deepEqual(await db.query(b, 'select * from public.subscriptions'), []);
+  });
+
+  test('premium follows the purchaser after unlinking', async () => {
+    const { a, b } = await db.createCouple();
+    await db.makePremium(a);
+    await db.query(a, 'select public.leave_couple()');
+    assert.equal((await db.call(a, 'select public.get_entitlement()')).is_premium, true);
+    assert.equal((await db.call(b, 'select public.get_entitlement()')).is_premium, false);
+  });
+
+  test('expired, revoked and billing-retry subscriptions grant nothing; grace does', async () => {
+    const cases = [
+      [{ status: 'expired', expires: `now() - interval '1 day'` }, false],
+      [{ status: 'active', expires: `now() - interval '1 minute'` }, false],
+      [{ status: 'revoked', expires: `now() + interval '20 days'` }, false],
+      [{ status: 'billing_retry', expires: `now() + interval '20 days'` }, false],
+      [{ status: 'grace', expires: `now() + interval '3 days'` }, true],
+    ];
+    for (const [subscription, expected] of cases) {
+      const user = await db.createUser('Ada');
+      await db.makePremium(user, subscription);
+      assert.equal((await db.call(user, 'select public.get_entitlement()')).is_premium, expected, JSON.stringify(subscription));
+    }
+  });
+
+  test('the trusted recorder binds a purchase to one account and applies refunds', async () => {
+    const { a, b, coupleId } = await db.createCouple();
+    const record = (user, status, expires) => db.asService((q) => q(
+      `select public.record_subscription('otid-1', $1, 'premium.yearly', $2, ${expires}, true, 'Sandbox', 'tx') as r`, [user, status],
+    )).then((r) => r.rows[0].r);
+
+    assert.equal(await record(a, 'active', `now() + interval '1 year'`), 'recorded');
+    assert.equal(await record(b, 'active', `now() + interval '1 year'`), 'owned_by_other_account');
+    assert.equal((await db.call(b, 'select public.get_entitlement()')).source, 'partner');
+
+    await db.query(a, `select public.set_couple_theme('dusk', '#AA5577')`);
+    // Server notification with no user attached (a refund) updates the existing row.
+    assert.equal(await record(null, 'revoked', 'now()'), 'updated');
+    assert.equal((await db.call(a, 'select public.get_entitlement()')).is_premium, false);
+    await db.rejects(a, `select public.set_couple_theme('ink')`, [], /premium_required/);
+    await db.query(a, `select public.set_couple_theme('plum')`);
+    assert.equal((await db.query(b, 'select theme_id from public.couple_spaces where id = $1', [coupleId]))[0].theme_id, 'plum');
+  });
+
+  test('premium themes and accents require premium; unknown themes are refused', async () => {
+    const { a } = await db.createCouple();
+    await db.rejects(a, `select public.set_couple_theme('linen')`, [], /premium_required/);
+    await db.rejects(a, `select public.set_couple_theme('paper', '#112233')`, [], /premium_required/);
+    await db.rejects(a, `select public.set_couple_theme('nope')`, [], /unknown_theme/);
+    await db.makePremium(a);
+    await db.rejects(a, `select public.set_couple_theme('linen', 'red')`, [], /invalid_accent/);
+    await db.query(a, `select public.set_couple_theme('linen', '#112233')`);
+  });
+});
+
+describe('notifications', () => {
+  test('a new note queues exactly one notification, for the partner, without the note text', async () => {
+    const { a, b, coupleId } = await db.createCouple();
+    await db.query(a, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'a very private sentence')`, [coupleId, a]);
+    const { rows } = await db.admin(`select user_id, category, payload::text as payload from public.notification_outbox where category = 'new_note' and user_id = any($1)`, [[a, b]]);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].user_id, b);
+    assert.ok(!rows[0].payload.includes('private sentence'));
+  });
+
+  test('previews are off by default and included only when the recipient opts in', async () => {
+    const { a, b, coupleId } = await db.createCouple('Ada', 'Ben');
+    await db.query(b, 'select public.register_device_token($1, $2)', [TOKEN('ab'), 'sandbox']);
+    const send = () => db.query(a, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'lunch at one?')`, [coupleId, a]);
+    const claim = async () => (await db.asService((q) => q('select * from public.claim_notifications(50)'))).rows.filter((r) => r.user_id === b);
+
+    await send();
+    const [hidden] = await claim();
+    assert.deepEqual([hidden.sender_name, hidden.preview, hidden.tokens.length], ['Ada', null, 1]);
+
+    await db.query(b, 'update public.notification_preferences set show_previews = true');
+    await send();
+    const [shown] = await claim();
+    assert.equal(shown.preview, 'lunch at one?');
+    // Claimed rows are not handed out twice.
+    assert.deepEqual(await claim(), []);
+  });
+
+  test('a disabled category queues nothing', async () => {
+    const { a, b, coupleId } = await db.createCouple();
+    await db.query(b, 'update public.notification_preferences set new_notes = false');
+    await db.query(a, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'shh')`, [coupleId, a]);
+    const { rows } = await db.admin(`select 1 from public.notification_outbox where user_id = $1 and category = 'new_note'`, [b]);
+    assert.equal(rows.length, 0);
+  });
+
+  test('preferences and tokens are private to their owner', async () => {
+    const { a, b } = await db.createCouple();
+    await db.query(a, 'select public.register_device_token($1, $2)', [TOKEN('cd'), 'production']);
+    await db.rejects(b, 'select * from public.device_tokens', [], /permission denied/);
+    assert.equal((await db.query(b, 'select user_id from public.notification_preferences')).length, 1);
+    const changed = await db.as(b, (q) => q('update public.notification_preferences set show_previews = true where user_id = $1', [a]));
+    assert.equal(changed.rowCount, 0);
+    await db.rejects(a, `select public.register_device_token('not-a-token', 'sandbox')`, [], /device_tokens_token_check/);
+  });
+
+  test('a device token moves with the signed-in account and stops on sign-out', async () => {
+    const { a, b } = await db.createCouple();
+    const token = TOKEN('ef');
+    await db.query(a, 'select public.register_device_token($1, $2)', [token, 'sandbox']);
+    await db.query(b, 'select public.register_device_token($1, $2)', [token, 'sandbox']);
+    const owner = async () => (await db.admin('select user_id from public.device_tokens where token = $1', [token])).rows.map((r) => r.user_id);
+    assert.deepEqual(await owner(), [b]);
+    await db.query(a, 'select public.unregister_device_token($1)', [token]); // not a's any more: no effect
+    assert.deepEqual(await owner(), [b]);
+    await db.query(b, 'select public.unregister_device_token($1)', [token]);
+    assert.deepEqual(await owner(), []);
+  });
+
+  test('pairing and unlinking notify the other person only', async () => {
+    const { a, b, coupleId } = await db.createCouple();
+    const outbox = async (user) => (await db.admin('select category, payload from public.notification_outbox where user_id = $1 order by id', [user])).rows;
+    assert.deepEqual((await outbox(a)).map((r) => [r.category, r.payload.event]), [['pairing', 'accepted']]);
+    assert.deepEqual(await outbox(b), []);
+    await db.query(a, 'select public.leave_couple()');
+    assert.deepEqual((await outbox(b)).map((r) => [r.category, r.payload.event]), [['account', 'space_ended']]);
+    assert.equal((await outbox(a)).length, 1);
+    assert.ok(coupleId);
+  });
+
+  test('dead tokens reported by APNs are removed', async () => {
+    const { a, b, coupleId } = await db.createCouple();
+    await db.query(b, 'select public.register_device_token($1, $2)', [TOKEN('12'), 'sandbox']);
+    await db.query(a, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'hi')`, [coupleId, a]);
+    const claimed = (await db.asService((q) => q('select * from public.claim_notifications(50)'))).rows.find((r) => r.user_id === b);
+    await db.asService((q) => q('select public.complete_notification($1, $2, $3)', [claimed.id, 'failed', [TOKEN('12')]]));
+    assert.equal((await db.admin('select 1 from public.device_tokens where user_id = $1', [b])).rows.length, 0);
+  });
+});
+
+describe('export and deletion', () => {
+  async function populated() {
+    const couple = await db.createCouple('Ada', 'Ben');
+    const { a, b, coupleId } = couple;
+    const photo = mediaPath(coupleId);
+    await db.query(a, `insert into public.notes (couple_id, author_id, body, photo_path) values ($1, $2, 'from ada', $3)`, [coupleId, a, photo]);
+    await db.query(b, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'from ben')`, [coupleId, b]);
+    await db.query(a, `insert into public.memories (couple_id, created_by, kind, title) values ($1, $2, 'moment', 'Ada moment')`, [coupleId, a]);
+    await db.query(b, `insert into public.important_dates (couple_id, created_by, title, starts_on) values ($1, $2, 'Ben date', '2021-01-01')`, [coupleId, b]);
+    return { ...couple, photo };
+  }
+
+  test('an export contains what the person authored and nothing their partner wrote', async () => {
+    const { a } = await populated();
+    const data = await db.call(a, 'select public.export_my_data()');
+    assert.equal(data.profile.display_name, 'Ada');
+    assert.deepEqual(data.notes.map((n) => n.body), ['from ada']);
+    assert.deepEqual(data.memories.map((m) => m.title), ['Ada moment']);
+    assert.deepEqual(data.important_dates, []);
+    assert.ok(!JSON.stringify(data).includes('from ben'));
+  });
+
+  test('an export still works after unlinking, when the space itself is no longer readable', async () => {
+    const { a } = await populated();
+    await db.query(a, 'select public.leave_couple()');
+    assert.deepEqual(await db.query(a, 'select id from public.notes'), []);
+    const data = await db.call(a, 'select public.export_my_data()');
+    assert.deepEqual(data.notes.map((n) => n.body), ['from ada']);
+  });
+
+  test('deleting an account removes that person\'s data, frees their partner, and keeps the partner\'s account', async () => {
+    const { a, b, coupleId, photo } = await populated();
+    await db.makePremium(a);
+    await db.query(a, 'select public.register_device_token($1, $2)', [TOKEN('9a'), 'sandbox']);
+
+    await db.rejects(a, 'select public.prepare_account_deletion($1)', [a], /permission denied/);
+    await db.asService((q) => q('select public.prepare_account_deletion($1)', [a]));
+    await db.admin('delete from auth.users where id = $1', [a]);
+
+    for (const [table, column] of [
+      ['profiles', 'id'], ['notes', 'author_id'], ['memories', 'created_by'], ['subscriptions', 'user_id'],
+      ['device_tokens', 'user_id'], ['notification_preferences', 'user_id'], ['couple_members', 'user_id'],
+      ['notification_outbox', 'user_id'], ['invitations', 'created_by'],
+    ]) {
+      const { rows } = await db.admin(`select count(*)::int as n from public.${table} where ${column} = $1`, [a]);
+      assert.equal(rows[0].n, 0, `${table} still holds rows for the deleted user`);
+    }
+    assert.equal((await db.admin('select 1 from public.storage_purge_queue where path = $1', [photo])).rows.length, 1);
+
+    // Ben keeps his account and his own words (exportable), and can pair again.
+    assert.equal((await db.query(b, 'select display_name from public.profiles'))[0].display_name, 'Ben');
+    assert.deepEqual((await db.call(b, 'select public.export_my_data()')).notes.map((n) => n.body), ['from ben']);
+    assert.deepEqual(await db.query(b, 'select id from public.couple_spaces'), []);
+    assert.ok(await db.call(b, 'select public.create_couple_space()'));
+    assert.equal((await db.admin('select status from public.couple_spaces where id = $1', [coupleId])).rows[0].status, 'ended');
+  });
+
+  test('ended spaces are purged after the retention window, and their media queued', async () => {
+    const { a, coupleId, photo } = await populated();
+    await db.query(a, 'select public.leave_couple()');
+    await db.admin('select app_private.purge_ended_spaces()');
+    assert.equal((await db.admin('select 1 from public.couple_spaces where id = $1', [coupleId])).rows.length, 1, 'kept inside the window');
+
+    await db.admin(`update public.couple_spaces set ended_at = now() - interval '31 days' where id = $1`, [coupleId]);
+    await db.admin('select app_private.purge_ended_spaces()');
+    assert.equal((await db.admin('select 1 from public.notes where couple_id = $1', [coupleId])).rows.length, 0);
+    assert.equal((await db.admin('select 1 from public.storage_purge_queue where path = $1', [photo])).rows.length, 1);
+  });
+
+  test('profile edits are limited to safe columns and validated', async () => {
+    const { a, b } = await db.createCouple();
+    await db.query(a, `update public.profiles set display_name = '  Ada L.  ', time_zone = 'Europe/Lisbon' where id = $1`, [a]);
+    assert.equal((await db.query(a, 'select display_name from public.profiles where id = $1', [a]))[0].display_name, 'Ada L.');
+    await db.rejects(a, `update public.profiles set time_zone = 'Nowhere/Land' where id = $1`, [a], /invalid_time_zone/);
+    await db.rejects(a, `update public.profiles set id = $2 where id = $1`, [a, b], /permission denied/);
+    const hijack = await db.as(a, (q) => q(`update public.profiles set display_name = 'pwned' where id = $1`, [b]));
+    assert.equal(hijack.rowCount, 0);
+    await db.rejects(a, 'delete from public.profiles', [], /permission denied/);
+  });
+});

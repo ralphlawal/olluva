@@ -1,0 +1,13 @@
+{
+  "name": "couple-notes-backend-tests",
+  "private": true,
+  "type": "module",
+  "description": "Applies the Supabase migrations to a throwaway local Postgres and tests the security rules.",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 ./*.test.js"
+  },
+  "devDependencies": {
+    "embedded-postgres": "17.10.0-beta.17",
+    "pg": "^8.13.0"
+  }
+}
