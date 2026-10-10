@@ -436,3 +436,45 @@ final class ContentStoreTests: XCTestCase {
         XCTAssertEqual(store.past(today: today).map(\.title), ["Concert"])
     }
 }
+
+@MainActor
+final class AccountDeletionTests: XCTestCase {
+    /// Reproduces the app's wiring: a live event stream is refreshing the
+    /// session while the account is being deleted.
+    func testDeletingAnAccountEndsSignedOutWithNoErrorAndTheAccountIsGone() async throws {
+        let fixture = Fixture()
+        defer { fixture.cleanUp() }
+        let session = SessionStore(backend: fixture.backend)
+        await session.start(isMissingBackend: false)
+        XCTAssertEqual(session.phase, .paired)
+
+        let events = fixture.backend.realtime.events(coupleID: fixture.couple)
+        let listener = Task {
+            for await _ in events { await session.refresh() }
+        }
+        defer { listener.cancel() }
+
+        try await session.deleteAccount()
+        XCTAssertEqual(session.phase, .signedOut)
+        XCTAssertFalse(session.sessionEndedUnexpectedly)
+        XCTAssertFalse(fixture.world.hasAccount(fixture.me))
+        XCTAssertTrue(fixture.world.hasAccount(fixture.partner), "the partner's account is untouched")
+    }
+
+    func testAFailedDeletionKeepsTheAccountAndReportsTheError() async throws {
+        let fixture = Fixture()
+        defer { fixture.cleanUp() }
+        let session = SessionStore(backend: fixture.backend)
+        await session.start(isMissingBackend: false)
+        fixture.world.setFailure(.offline)
+        do {
+            try await session.deleteAccount()
+            XCTFail("expected failure")
+        } catch {
+            XCTAssertEqual(error as? AppError, .offline)
+        }
+        fixture.world.setFailure(nil)
+        XCTAssertEqual(session.phase, .paired)
+        XCTAssertTrue(fixture.world.hasAccount(fixture.me))
+    }
+}

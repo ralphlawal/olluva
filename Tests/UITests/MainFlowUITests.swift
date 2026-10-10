@@ -55,7 +55,7 @@ final class HomeAndNotesUITests: UITestCase {
         snapshot("26-composer-stickers")
 
         app.element("composer.preview").tap()
-        app.staticTexts["On their Home Screen"].waitToAppear()
+        app.element("preview.done").waitToAppear()
         snapshot("27-composer-preview")
         app.element("preview.done").tap()
 
@@ -75,10 +75,11 @@ final class HomeAndNotesUITests: UITestCase {
         app.element("home.draw").tapWhenReady()
         app.element("draw.tool.pen").waitToAppear()
 
-        let canvas = app.otherElements["Drawing area"].firstMatch.waitToAppear()
-        let from = canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.35))
-        let via = canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.55, dy: 0.7))
-        let to = canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.3))
+        // Draw two strokes on the note, which fills the upper part of the screen.
+        let screen = app.windows.firstMatch
+        let from = screen.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.22))
+        let via = screen.coordinate(withNormalizedOffset: CGVector(dx: 0.55, dy: 0.42))
+        let to = screen.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.2))
         from.press(forDuration: 0.05, thenDragTo: via)
         via.press(forDuration: 0.05, thenDragTo: to)
         snapshot("30-composer-draw")

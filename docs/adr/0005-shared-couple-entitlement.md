@@ -16,4 +16,5 @@ A couple should not need two subscriptions. Apple's rules tie a purchase to the 
 ## Consequences
 - The free tier is real: unlimited notes, drawing, photos, 4 papers, 7 inks, 6 stickers, 2 themes, 30 memories, 1 pending surprise, all widget families.
 - Family Sharing is off: the couple model replaces it.
-- **Verified:** StoreKit 2 purchase, pending, failure, expiry, refund and account binding against the bundled StoreKit configuration; JWS verification and state mapping with a generated certificate chain; database refusal of every client write. **Not verified:** the deployed Edge Functions and real App Store sandbox transactions (need a Supabase project and App Store Connect products).
+- **Verified:** JWS verification and subscription state mapping, with a generated certificate chain; database refusal of every client write to entitlements; that the paywall reports the store as unavailable instead of showing invented prices.
+- **Not verified:** the StoreKit purchase, restore, expiry and refund flows. Tests for them exist (`PurchaseStoreTests`) but skip here, because StoreKit's local test service only serves builds signed with a development team. Also not verified: the deployed Edge Functions and real App Store sandbox transactions.

@@ -54,6 +54,7 @@ struct DrawingCanvas: UIViewRepresentable {
         canvas.drawing = drawing
         canvas.delegate = context.coordinator
         canvas.accessibilityLabel = String(localized: "Drawing area")
+        canvas.accessibilityTraits = .allowsDirectInteraction
         controller.canvas = canvas
         return canvas
     }
@@ -66,6 +67,9 @@ struct DrawingCanvas: UIViewRepresentable {
             context.coordinator.isApplyingExternalChange = false
         }
         canvas.isUserInteractionEnabled = isActive
+        // Exposed to assistive technologies only while drawing; otherwise it
+        // would sit in front of the note's text field.
+        canvas.isAccessibilityElement = isActive
         canvas.tool = Self.pencilKitTool(tool, hex: inkHex, width: width)
     }
 

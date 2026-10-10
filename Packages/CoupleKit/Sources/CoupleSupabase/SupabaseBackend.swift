@@ -366,7 +366,7 @@ extension SupabaseRepositories: RealtimeRepository {
             let task = Task {
                 let id = coupleID.uuidString.lowercased()
                 let channel = client.channel("space-\(id)")
-                let byCouple = "couple_id=eq.\(id)"
+                let byCouple = RealtimePostgresFilter.eq("couple_id", value: id)
 
                 // Realtime applies the same RLS SELECT policies as the API, so
                 // a subscriber only ever receives rows they could have read.
@@ -375,10 +375,12 @@ extension SupabaseRepositories: RealtimeRepository {
                 let memories = channel.postgresChange(AnyAction.self, schema: "public", table: "memories", filter: byCouple)
                 let dates = channel.postgresChange(AnyAction.self, schema: "public", table: "important_dates", filter: byCouple)
                 let members = channel.postgresChange(AnyAction.self, schema: "public", table: "couple_members", filter: byCouple)
-                let spaces = channel.postgresChange(AnyAction.self, schema: "public", table: "couple_spaces", filter: "id=eq.\(id)")
+                let spaces = channel.postgresChange(AnyAction.self, schema: "public", table: "couple_spaces", filter: .eq("id", value: id))
                 let status = channel.statusChange
 
-                await channel.subscribe()
+                // If the live connection cannot be opened the app still works:
+                // it re-reads on every foreground and on every push.
+                try? await channel.subscribeWithError()
                 let decoder = self.decoder
 
                 await withTaskGroup(of: Void.self) { group in

@@ -15,7 +15,7 @@ The content is intimate. The realistic threats are: another user reading or alte
 | Impersonating the partner | `author_id`, timestamps, version and origin are set by a trigger; those columns are not granted to clients | `content.test.js` |
 | Lost updates | Version check on edit; append-only notes; client never replaces a newer version with an older one | `content.test.js`, `NoteFeedTests`, `NotesStoreTests` |
 | Duplicate sends and deliveries | Client-generated ids; idempotent insert; scheduled note reuses the message id; `SKIP LOCKED` workers | `content.test.js`, `LocalBackendTests`, `NotesStoreTests` |
-| Self-granted premium | No client write path to `subscriptions`; purchases verified against Apple's chain on the server; limits enforced in SQL | `accounts.test.js`, `functions.test.js`, `PurchaseStoreTests` |
+| Self-granted premium | No client write path to `subscriptions`; purchases verified against Apple's chain on the server; limits enforced in SQL | `accounts.test.js`, `functions.test.js` (the client-side `PurchaseStoreTests` need a signing team and have not run) |
 | Cross-couple media access | Storage policies parse the path and require membership; malformed or traversal-style names fail closed; uploads are write-once | `content.test.js` "private media" |
 | Malicious uploads | Bucket MIME allow-list and size limits; the app re-encodes every image, which also strips EXIF including location | `ImagePipelineTests` |
 | Device tokens as a credential | Tokens are never an input to authorisation, are not readable through the API, move with the signed-in account and are removed on sign-out | `accounts.test.js` |

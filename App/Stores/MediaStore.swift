@@ -133,12 +133,13 @@ enum ImagePipeline {
     /// The largest centred rectangle of the given aspect ratio.
     static func centeredRect(in image: CGImage, aspect: CGFloat) -> CGRect {
         let width = CGFloat(image.width), height = CGFloat(image.height)
+        // Whole pixels, so a square request yields an exactly square image.
         if width / height > aspect {
-            let cropWidth = height * aspect
-            return CGRect(x: (width - cropWidth) / 2, y: 0, width: cropWidth, height: height)
+            let cropWidth = (height * aspect).rounded(.down)
+            return CGRect(x: ((width - cropWidth) / 2).rounded(.down), y: 0, width: cropWidth, height: height)
         }
-        let cropHeight = width / aspect
-        return CGRect(x: 0, y: (height - cropHeight) / 2, width: width, height: cropHeight)
+        let cropHeight = (width / aspect).rounded(.down)
+        return CGRect(x: 0, y: ((height - cropHeight) / 2).rounded(.down), width: width, height: cropHeight)
     }
 
     static func avatarJPEG(from data: Data) -> Data? {

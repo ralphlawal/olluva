@@ -144,6 +144,11 @@ struct SettingsView: View {
                     }
                 }
             }
+            // Signing out, deleting the account or unlinking changes what is
+            // underneath this sheet; it must not linger on top of it.
+            .onChange(of: app.session.phase) { _, _ in
+                if isSheet { dismiss() }
+            }
             .sheet(isPresented: $showingPrivacy) { PrivacyExplainerSheet() }
             .sheet(isPresented: $showingWidgetHelp) { WidgetHelpView() }
             .sheet(item: $exportFile) { file in
