@@ -1,5 +1,6 @@
 import CoupleDomain
 import Foundation
+import OSLog
 import Supabase
 
 public enum SupabaseBackendFactory {
@@ -369,9 +370,23 @@ extension SupabaseRepositories: NoteRepository {
 
 // MARK: - Realtime
 
+/// Connection status and event kinds only. Never row contents.
+private let realtimeLogger = Logger(subsystem: "CoupleSupabase", category: "realtime")
+
+private enum realtimeLog {
+    static func notice(_ message: String) {
+        realtimeLogger.notice("\(message, privacy: .public)")
+        #if DEBUG
+        // Also on stderr, so a device run started from the command line shows it.
+        FileHandle.standardError.write(Data("[realtime] \(message)\n".utf8))
+        #endif
+    }
+}
+
 extension SupabaseRepositories: RealtimeRepository {
     func events(coupleID: UUID) -> AsyncStream<SpaceEvent> {
-        AsyncStream { continuation in
+        AsyncStream { rawContinuation in
+            let continuation = LoggingContinuation(rawContinuation)
             let task = Task {
                 let id = coupleID.uuidString.lowercased()
                 // A name unique to this subscription. The app stops and restarts
@@ -426,7 +441,9 @@ extension SupabaseRepositories: RealtimeRepository {
                         // After a dropped connection comes back, changes made in
                         // the gap were never delivered: tell the app to re-read.
                         var hasSubscribedBefore = false
-                        for await state in status where state == .subscribed {
+                        for await state in status {
+                            realtimeLog.notice("channel status: \(String(describing: state))")
+                            guard state == .subscribed else { continue }
                             if hasSubscribedBefore { continuation.yield(.resynchronise) }
                             hasSubscribedBefore = true
                         }
@@ -435,8 +452,35 @@ extension SupabaseRepositories: RealtimeRepository {
                 await client.removeChannel(channel)
                 continuation.finish()
             }
-            continuation.onTermination = { _ in task.cancel() }
+            rawContinuation.onTermination = { _ in task.cancel() }
         }
+    }
+}
+
+/// Forwards events to the stream, noting each kind in the log.
+private struct LoggingContinuation: Sendable {
+    let base: AsyncStream<SpaceEvent>.Continuation
+
+    init(_ base: AsyncStream<SpaceEvent>.Continuation) {
+        self.base = base
+    }
+
+    func yield(_ event: SpaceEvent) {
+        let kind: String
+        switch event {
+        case .note: kind = "note"
+        case .reactionsChanged: kind = "reactions"
+        case .spaceChanged: kind = "space"
+        case .memoriesChanged: kind = "memories"
+        case .datesChanged: kind = "dates"
+        case .resynchronise: kind = "resynchronise"
+        }
+        realtimeLog.notice("event: \(kind)")
+        base.yield(event)
+    }
+
+    func finish() {
+        base.finish()
     }
 }
 
