@@ -22,6 +22,7 @@ Postgres (Supabase). Migrations live in `supabase/migrations`, applied in filena
 | `device_tokens` | APNs tokens | Nobody (not even self) | `register_device_token` / `unregister_device_token` |
 | `notification_outbox` | Pending pushes: ids only, no content | Nobody | Triggers; drained by `send-push` |
 | `subscriptions` | Verified App Store subscriptions | The owning user | Service role only |
+| `widget_tokens` | Hashed, revocable read-only credentials for the widget | Nobody | `issue_widget_token` / `revoke_widget_token` |
 | `storage_purge_queue` | Media waiting to be removed from Storage | Nobody | Triggers; drained by `purge-storage` |
 | `audit_events` | Pairing, unlinking, subscription and deletion events. No content. | Nobody | Functions only |
 

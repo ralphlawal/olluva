@@ -136,7 +136,7 @@ public struct WidgetSnapshotStore: Sendable {
         try manager.createDirectory(at: directory, withIntermediateDirectories: true)
 
         var stored = snapshot
-        var keep: Set<String> = [Self.snapshotFile]
+        var keep: Set<String> = [Self.snapshotFile, Self.remoteConfigFile]
         if var note = stored.note {
             if let photo {
                 let name = "\(note.id.uuidString.lowercased())-photo.jpg"
@@ -161,6 +161,8 @@ public struct WidgetSnapshotStore: Sendable {
     /// Removes every trace of note content: used on sign-out, unlinking and
     /// account deletion.
     public func clear(to snapshot: WidgetSnapshot = .signedOut) {
+        // Removes the remote credential too: after this, neither the widget
+        // nor the notification extension can fetch anything.
         try? FileManager.default.removeItem(at: directory)
         try? save(snapshot)
     }

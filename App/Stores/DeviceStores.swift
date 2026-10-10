@@ -136,6 +136,9 @@ final class WidgetBridge {
 
     var isAvailable: Bool { store != nil }
 
+    /// What was last handed to the widget, for diagnostics. A state name only.
+    var lastState: String { lastWritten?.state.rawValue ?? "none" }
+
     /// Builds what the widget should show for the current state.
     func snapshot(session: SessionStore, notes: NotesStore) -> WidgetSnapshot {
         let space = session.space.space
@@ -161,6 +164,28 @@ final class WidgetBridge {
         return snapshot
     }
 
+    /// Gives the widget its own way to fetch content: a narrow token from the
+    /// server, stored beside the snapshot. Without it the widget can only show
+    /// what the app last wrote. Done once per sign-in; skipped in demo mode.
+    func configureRemoteIfNeeded(backend: Backend, configuration: AppConfiguration) async {
+        guard let store, !backend.isDemo, let supabase = configuration.supabase, store.loadRemoteConfig() == nil else { return }
+        do {
+            let token = try await backend.notifications.issueWidgetToken()
+            try store.saveRemoteConfig(WidgetRemoteConfig(
+                endpoint: supabase.url.appendingPathComponent("functions/v1/widget-snapshot"),
+                apiKey: supabase.anonKey, token: token
+            ))
+            Diagnostics.trace("widget: remote fetch configured")
+        } catch {
+            Diagnostics.failure(Diagnostics.widget, "configureRemote", error)
+        }
+    }
+
+    func revokeRemote(backend: Backend) async {
+        guard let token = store?.loadRemoteConfig()?.token else { return }
+        try? await backend.notifications.revokeWidgetToken(token)
+    }
+
     /// Publishes and waits for the files to be written. Used when the app has
     /// been woken in the background and may be suspended again at any moment.
     func publishAndWait(session: SessionStore, notes: NotesStore) async {
@@ -170,6 +195,9 @@ final class WidgetBridge {
 
     func publish(session: SessionStore, notes: NotesStore) {
         guard let store else { return }
+        // Paired but notes not loaded yet: say nothing rather than flash
+        // "no notes" on the Home Screen and spend a widget reload on it.
+        if session.phase == .paired, notes.loadState != .loaded { return }
         var snapshot = snapshot(session: session, notes: notes)
         // Skip the write (and the reload budget it spends) when nothing visible changed.
         var comparable = snapshot
@@ -186,6 +214,7 @@ final class WidgetBridge {
             do {
                 try store.save(snapshot, photo: photo, drawing: drawing)
                 WidgetCenter.shared.reloadAllTimelines()
+                Diagnostics.trace("widget: snapshot written (\(snapshot.state.rawValue)), reload requested")
             } catch {
                 Diagnostics.failure(Diagnostics.widget, "publish", error)
             }

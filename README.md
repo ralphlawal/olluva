@@ -53,7 +53,7 @@ These are implemented and their logic is tested locally, but they need credentia
 | `delete-account`, `purge-storage` | Exercising them for real | Deployed; they start and refuse unauthorised calls. Not yet run to completion |
 | Scheduled delivery on the real server | Scheduling a note and waiting | Jobs are installed and running; a scheduled note has not been watched arriving |
 | Backup and restore with Sign in with Apple | The capability on a signed build; Apple provider and manual linking enabled in Supabase | Flow tested on the in-memory backend with a stand-in for the Apple ID; the real Apple and Supabase exchange has not run |
-| Widgets on a Home or Lock Screen | A signed build with the App Group | Snapshot store tested; widget views rendered inside the app; extension builds and embeds |
+| Widget timing over a full day | Living with it on a phone | Verified on an iPhone 16: the Home Screen widget shows notes, and updates within seconds of a push with the app closed. Not measured: how often iOS lets it self-refresh, Low Power Mode, the Lock Screen variants |
 | Purchases (StoreKit 2) | A development team for signing (then `PurchaseStoreTests` run locally); App Store Connect products and a sandbox account for the real thing | **Nothing end to end.** The purchase code compiles and the paywall's unavailable state is tested; the 7 StoreKit tests skip without a signing team |
 | Partner unlocking from a purchase | Deployed `verify-purchase` | Database entitlement rules tested |
 
@@ -62,7 +62,6 @@ Schema and policies (36 live API checks), anonymous sign-in, pairing, notes, Rea
 
 ### Not built
 - End-to-end encryption (see ADR 0007). The app does not claim it.
-- A Notification Service Extension (would make widget refresh on push more reliable).
 - Camera capture and in-app QR scanning. The system photo picker and Camera app cover both.
 - iPad layout, interactive widgets, languages other than English (strings are localisable).
 - CAPTCHA or App Attest on identity creation (see ADR 0008).

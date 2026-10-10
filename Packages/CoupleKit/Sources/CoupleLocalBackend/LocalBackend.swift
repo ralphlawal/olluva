@@ -787,6 +787,16 @@ extension LocalBackend: NotificationRepository {
     }
 }
 
+extension LocalBackend {
+    /// There is no server for a widget to call in memory: the token is inert.
+    public func issueWidgetToken() async throws -> String {
+        _ = try user()
+        return String(repeating: "0", count: 64)
+    }
+
+    public func revokeWidgetToken(_ token: String) async throws {}
+}
+
 extension LocalBackend: EntitlementRepository {
     public func entitlement() async throws -> Entitlement {
         await pause()

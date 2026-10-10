@@ -131,6 +131,9 @@ public protocol NotificationRepository: Sendable {
     func update(_ preferences: NotificationPreferences) async throws
     func registerDevice(token: String, environment: PushEnvironment) async throws
     func unregisterDevice(token: String) async throws
+    /// A narrow, read-only credential that lets the widget fetch what it shows.
+    func issueWidgetToken() async throws -> String
+    func revokeWidgetToken(_ token: String) async throws
 }
 
 public protocol EntitlementRepository: Sendable {

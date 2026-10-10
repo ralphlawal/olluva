@@ -690,6 +690,16 @@ extension SupabaseRepositories: NotificationRepository {
     }
 }
 
+extension SupabaseRepositories {
+    func issueWidgetToken() async throws -> String {
+        try await run { try await client.rpc("issue_widget_token").execute().value }
+    }
+
+    func revokeWidgetToken(_ token: String) async throws {
+        try await run { _ = try await client.rpc("revoke_widget_token", params: TokenParams(p_token: token)).execute() }
+    }
+}
+
 // MARK: - Entitlement
 
 extension SupabaseRepositories: EntitlementRepository {

@@ -1,6 +1,6 @@
 # ADR 0004: Widgets read a snapshot from the App Group; they hold no session
 
-Status: accepted · 2026-10-09
+Status: partly superseded by ADR 0009 (the widget now also fetches for itself) · 2026-10-09
 
 ## Context
 Widgets are a first-class feature, but iOS decides when they refresh, they run under a tight memory limit, and they are visible on the Lock Screen.

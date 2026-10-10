@@ -35,6 +35,12 @@ final class AppEnvironment {
     let demo: DemoController?
     #endif
 
+    /// The one environment for the process. The app delegate needs it before
+    /// any window exists: iOS can launch the app in the background, with no
+    /// scene at all, purely to handle a push.
+    static let shared = AppEnvironment()
+
+    private var startTask: Task<Void, Never>?
     private var syncTask: Task<Void, Never>?
     private var syncTarget: SyncTarget?
 
@@ -110,7 +116,19 @@ final class AppEnvironment {
 
     // MARK: - Start-up
 
+    /// Safe to call from several places at once: everyone waits for the same
+    /// start-up to finish.
     func start() async {
+        if let startTask {
+            await startTask.value
+            return
+        }
+        let task = Task { await self.performStart() }
+        startTask = task
+        await task.value
+    }
+
+    private func performStart() async {
         guard !hasStarted else { return }
         hasStarted = true
 
@@ -144,6 +162,7 @@ final class AppEnvironment {
         }
         publishWidget()
         Task {
+            await widgets.configureRemoteIfNeeded(backend: backend, configuration: configuration)
             await purchases.syncWithServer()
             await notifications.refreshAuthorization()
         }
@@ -214,6 +233,24 @@ final class AppEnvironment {
         await widgets.publishAndWait(session: session, notes: notes)
     }
 
+    /// Handles a push that arrived while the app was not on screen: make sure
+    /// the app has started, fetch the current notes, and put them on the widget.
+    func handleBackgroundPush() async -> Bool {
+        Diagnostics.trace("push: background wake")
+        await start()
+        guard session.userID != nil else {
+            Diagnostics.trace("push: no session, nothing to refresh")
+            return false
+        }
+        await session.refresh()
+        if session.phase == .paired, let coupleID = session.coupleID {
+            await notes.load(coupleID: coupleID)
+        }
+        await publishWidgetAndWait()
+        Diagnostics.trace("push: widget published, state=\(widgets.lastState)")
+        return true
+    }
+
     // MARK: - Links
 
     func open(_ url: URL) {
@@ -248,7 +285,12 @@ final class AppEnvironment {
     }
 
     func signOut() async throws {
-        try await session.signOut { [notifications] in await notifications.unregisterDevice() }
+        try await session.signOut { [notifications, widgets, backend] in
+            await notifications.unregisterDevice()
+            // While the session can still authorise it: after sign-out the
+            // widget must not be able to fetch anything.
+            await widgets.revokeRemote(backend: backend)
+        }
     }
 
     func deleteAccount() async throws {
@@ -322,6 +364,8 @@ enum UnconfiguredBackend {
         func update(_ preferences: NotificationPreferences) async throws { throw fail }
         func registerDevice(token: String, environment: PushEnvironment) async throws { throw fail }
         func unregisterDevice(token: String) async throws { throw fail }
+        func issueWidgetToken() async throws -> String { throw fail }
+        func revokeWidgetToken(_ token: String) async throws { throw fail }
         func entitlement() async throws -> Entitlement { throw fail }
         func submitTransaction(jws: String) async throws -> Entitlement { throw fail }
     }

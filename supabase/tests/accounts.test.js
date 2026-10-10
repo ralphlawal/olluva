@@ -323,3 +323,73 @@ describe('identity without sign-up', () => {
     await db.rejects(named, 'select app_private.purge_abandoned_identities()', [], /permission denied/);
   });
 });
+
+describe('widget tokens', () => {
+  const snapshot = async (token) => (await db.asService((q) => q('select public.widget_snapshot($1) as s', [token]))).rows[0].s;
+
+  test('a token reads exactly what the widget shows: the partner\'s latest live note', async () => {
+    const { a, b, coupleId } = await db.createCouple('Ada', 'Ben');
+    const token = await db.call(a, 'select public.issue_widget_token()');
+    assert.match(token, /^[0-9a-f]{64}$/);
+    assert.equal((await snapshot(token)).state, 'empty');
+
+    await db.query(a, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'my own note')`, [coupleId, a]);
+    assert.equal((await snapshot(token)).state, 'empty', 'never the person\'s own notes');
+
+    await db.query(b, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'older')`, [coupleId, b]);
+    const [newer] = await db.query(b, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'newer') returning id`, [coupleId, b]);
+    let s = await snapshot(token);
+    assert.deepEqual([s.state, s.partner_name, s.note.body, s.note.is_unseen], ['note', 'Ben', 'newer', true]);
+
+    // Deleting a note removes it from what the widget is given, at once.
+    await db.query(b, 'select public.delete_note($1)', [newer.id]);
+    s = await snapshot(token);
+    assert.equal(s.note.body, 'older');
+  });
+
+  test('only the hash is stored, and clients cannot read tokens or call the snapshot directly', async () => {
+    const { a } = await db.createCouple();
+    const token = await db.call(a, 'select public.issue_widget_token()');
+    const { rows } = await db.admin('select token_hash from public.widget_tokens where user_id = $1', [a]);
+    assert.equal(rows[0].token_hash.length, 32);
+    assert.ok(!rows[0].token_hash.toString('hex').includes(token.slice(0, 16)));
+    await db.rejects(a, 'select * from public.widget_tokens', [], /permission denied/);
+    await db.rejects(a, 'select public.widget_snapshot($1)', [token], /permission denied/);
+    await assert.rejects(() => db.asAnon((q) => q('select public.issue_widget_token()')), /permission denied/);
+  });
+
+  test('unknown and revoked tokens get nothing; another person cannot revoke yours', async () => {
+    const { a, b } = await db.createCouple();
+    const token = await db.call(a, 'select public.issue_widget_token()');
+    assert.equal(await snapshot('f'.repeat(64)), null);
+    assert.equal(await snapshot(null), null);
+    await db.query(b, 'select public.revoke_widget_token($1)', [token]);
+    assert.notEqual(await snapshot(token), null, 'the partner cannot revoke it');
+    await db.query(a, 'select public.revoke_widget_token($1)', [token]);
+    assert.equal(await snapshot(token), null);
+  });
+
+  test('a token stops revealing the space once the couple unlinks, and dies with the account', async () => {
+    const { a, b, coupleId } = await db.createCouple();
+    await db.query(b, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'private')`, [coupleId, b]);
+    const token = await db.call(a, 'select public.issue_widget_token()');
+    assert.equal((await snapshot(token)).state, 'note');
+
+    await db.query(b, 'select public.leave_couple()');
+    const after = await snapshot(token);
+    assert.deepEqual(after, { state: 'unpaired' });
+
+    await db.asService((q) => q('select public.prepare_account_deletion($1)', [a]));
+    await db.admin('delete from auth.users where id = $1', [a]);
+    assert.equal(await snapshot(token), null);
+  });
+
+  test('each identity keeps at most three tokens', async () => {
+    const { a } = await db.createCouple();
+    const tokens = [];
+    for (let i = 0; i < 5; i += 1) tokens.push(await db.call(a, 'select public.issue_widget_token()'));
+    const { rows } = await db.admin('select count(*)::int as n from public.widget_tokens where user_id = $1', [a]);
+    assert.equal(rows[0].n, 3);
+    assert.notEqual(await snapshot(tokens[4]), null, 'the newest still works');
+  });
+});

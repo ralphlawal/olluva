@@ -36,6 +36,8 @@ targets:
         product: CoupleSupabase
       - target: CoupleNotesWidgets
         embed: true
+      - target: CoupleNotesNotifications
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
@@ -101,6 +103,40 @@ targets:
       path: Widgets/CoupleNotesWidgets.entitlements
       properties:
         com.apple.security.application-groups: [$(APP_GROUP_ID)]
+  # Runs when a push arrives, even if the app is closed, and refreshes the
+  # widget from the server. See NotificationService.swift.
+  CoupleNotesNotifications:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: NotificationService
+    dependencies:
+      - package: CoupleKit
+        product: CoupleDomain
+      - package: CoupleKit
+        product: CoupleDesign
+      - package: CoupleKit
+        product: CoupleWidgetUI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).notifications
+        INFOPLIST_FILE: NotificationService/Info.plist
+        CODE_SIGN_ENTITLEMENTS: NotificationService/CoupleNotesNotifications.entitlements
+        SKIP_INSTALL: YES
+    info:
+      path: NotificationService/Info.plist
+      properties:
+        CFBundleDisplayName: $(APP_DISPLAY_NAME)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        AppGroupID: $(APP_GROUP_ID)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+    entitlements:
+      path: NotificationService/CoupleNotesNotifications.entitlements
+      properties:
+        com.apple.security.application-groups: [$(APP_GROUP_ID)]
   CoupleNotesTests:
     type: bundle.unit-test
     platform: iOS
@@ -135,6 +171,7 @@ schemes:
       targets:
         CoupleNotes: all
         CoupleNotesWidgets: all
+        CoupleNotesNotifications: all
     run:
       config: Debug
       storeKitConfiguration: App/Resources/Products.storekit

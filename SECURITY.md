@@ -26,6 +26,7 @@ The content is intimate. People have no account: each phone holds an anonymous i
 | Anonymous identities over-reaching | They are ordinary authenticated users: same policies, no exceptions | `accounts.test.js` "identity without sign-up" |
 | Taking over a space through backup | An Apple ID can be linked to one identity only; linking is done by Supabase Auth from an Apple-signed token | `LocalBackendTests`; not yet tested against Supabase |
 | Data on the device | Session in the Keychain (SDK default). Caches, outbox, drafts and the widget snapshot use file protection until first unlock, and are wiped on sign-out, unlink and deletion. The invitation code is kept in the Keychain, this device only. | `NotesStoreTests`, `WidgetSnapshotTests` |
+| Widget credential | The widget and notification extension hold a separate token that can only read what the widget displays. Stored as a hash, revocable, removed on sign-out and with the account, useless after unlinking (ADR 0009) | `accounts.test.js` "widget tokens" |
 | Logs | App and function logs carry event names and codes only. `Diagnostics` and `log()` take no user content. | Code review |
 
 ## What is not claimed

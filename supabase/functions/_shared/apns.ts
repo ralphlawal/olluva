@@ -102,6 +102,9 @@ export async function sendPush(
         // Wakes the app briefly so it can fetch the note and refresh the
         // widget. iOS may throttle or skip this; the alert is still shown.
         "content-available": 1,
+        // Lets the notification extension run first. It refreshes the widget
+        // itself, which works even when the app has been closed.
+        "mutable-content": 1,
       },
       category: message.category,
       ...message.data,

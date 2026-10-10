@@ -49,6 +49,7 @@ With automatic signing, Xcode creates the profiles. The targets and their entitl
 | --- | --- | --- |
 | `CoupleNotes` | `$(APP_BUNDLE_ID)` | App Group, `aps-environment`, Sign in with Apple |
 | `CoupleNotesWidgets` | `$(APP_BUNDLE_ID).widgets` | App Group |
+| `CoupleNotesNotifications` | `$(APP_BUNDLE_ID).notifications` | App Group |
 
 The widget finds the shared container through `AppGroupID` in its Info.plist, which is filled from `APP_GROUP_ID`. If the two targets do not share the same group, the widget shows its placeholder forever.
 
@@ -80,7 +81,7 @@ Then, in the dashboard:
 ```sh
 cp .env.example .env        # fill in; see comments in the file
 supabase secrets set --env-file .env
-for f in delete-account verify-purchase app-store-notifications send-push purge-storage; do
+for f in delete-account verify-purchase app-store-notifications send-push purge-storage widget-snapshot; do
   supabase functions deploy $f --use-api --no-verify-jwt
 done
 ```

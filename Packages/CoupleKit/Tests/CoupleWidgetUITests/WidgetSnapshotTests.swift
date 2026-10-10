@@ -100,3 +100,65 @@ final class WidgetSnapshotTests: XCTestCase {
         XCTAssertNil(store.image(named: "missing.jpg"))
     }
 }
+
+final class WidgetRemoteTests: XCTestCase {
+    private let existing = WidgetSnapshot(state: .note, partnerName: "Old", style: .minimal, hidesContentOnLockScreen: false)
+
+    func testAServerNoteBecomesASnapshotKeepingThisDevicesChoices() throws {
+        let json = #"""
+        {"state":"note","partner_name":"Ben","theme_id":"plum","accent_hex":null,
+         "note":{"id":"7195A1BA-D008-448B-8234-ABE723B444FA","body":"see you at seven",
+                 "style":{"paper":"blush","ink":"rose","typeface":"serif","photo_layout":"full","stickers":[]},
+                 "photo_path":"couples/x/y.jpg","drawing_path":null,
+                 "created_at":"2026-10-10T21:24:02.123456+00:00","is_unseen":true},
+         "photo_url":"https://example.test/signed","drawing_url":null}
+        """#
+        let payload = try WidgetRemoteRefresher.decode(Data(json.utf8))
+        let snapshot = WidgetRemoteRefresher.snapshot(from: payload, keeping: existing)
+        XCTAssertEqual(snapshot.state, .note)
+        XCTAssertEqual(snapshot.partnerName, "Ben")
+        XCTAssertEqual(snapshot.themeID, "plum")
+        XCTAssertEqual(snapshot.note?.content.body, "see you at seven")
+        XCTAssertEqual(snapshot.note?.content.style.paper, "blush")
+        XCTAssertEqual(snapshot.note?.content.style.photoLayout, .full)
+        XCTAssertEqual(snapshot.note?.isUnseen, true)
+        // Chosen on this phone, not known to the server.
+        XCTAssertEqual(snapshot.style, .minimal)
+        XCTAssertFalse(snapshot.hidesContentOnLockScreen)
+    }
+
+    func testNoNoteAndUnpairedCarryNoContent() throws {
+        let empty = try WidgetRemoteRefresher.decode(Data(#"{"state":"empty","partner_name":"Ben","theme_id":"paper","accent_hex":null,"note":null,"photo_url":null,"drawing_url":null}"#.utf8))
+        let emptySnapshot = WidgetRemoteRefresher.snapshot(from: empty, keeping: existing)
+        XCTAssertEqual(emptySnapshot.state, .empty)
+        XCTAssertNil(emptySnapshot.note)
+
+        let unpaired = try WidgetRemoteRefresher.decode(Data(#"{"state":"unpaired"}"#.utf8))
+        let unpairedSnapshot = WidgetRemoteRefresher.snapshot(from: unpaired, keeping: existing)
+        XCTAssertEqual(unpairedSnapshot.state, .unpaired)
+        XCTAssertNil(unpairedSnapshot.note)
+        XCTAssertEqual(unpairedSnapshot.partnerName, "")
+    }
+
+    func testAnUnknownStateOrMissingNoteNeverShowsStaleContent() throws {
+        let odd = try WidgetRemoteRefresher.decode(Data(#"{"state":"something-new"}"#.utf8))
+        XCTAssertNil(WidgetRemoteRefresher.snapshot(from: odd, keeping: existing).note)
+        let inconsistent = try WidgetRemoteRefresher.decode(Data(#"{"state":"note","partner_name":"Ben","note":null}"#.utf8))
+        XCTAssertEqual(WidgetRemoteRefresher.snapshot(from: inconsistent, keeping: existing).state, .empty)
+    }
+
+    func testWithoutConfigurationNothingIsFetchedAndTheCredentialSurvivesSnapshotWrites() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("remote-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = WidgetSnapshotStore(directory: directory)
+        let outcome = await WidgetRemoteRefresher.refresh(store: store)
+        XCTAssertEqual(outcome, .notConfigured)
+
+        let config = WidgetRemoteConfig(endpoint: URL(string: "https://example.test/fn")!, apiKey: "k", token: "t")
+        try store.saveRemoteConfig(config)
+        try store.save(WidgetSnapshot(state: .empty))
+        XCTAssertEqual(store.loadRemoteConfig(), config, "writing a snapshot must not delete the credential")
+        store.clear()
+        XCTAssertNil(store.loadRemoteConfig(), "signing out removes it")
+    }
+}

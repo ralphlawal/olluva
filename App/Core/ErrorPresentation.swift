@@ -71,6 +71,15 @@ enum Diagnostics {
     static let push = Logger(subsystem: subsystem, category: "push")
     static let store = Logger(subsystem: subsystem, category: "purchases")
 
+    /// A step-by-step trace for diagnosing background behaviour on a device.
+    /// States and step names only; never content.
+    static func trace(_ message: String) {
+        push.notice("\(message, privacy: .public)")
+        #if DEBUG
+        FileHandle.standardError.write(Data("[trace] \(message)\n".utf8))
+        #endif
+    }
+
     static func failure(_ logger: Logger, _ operation: StaticString, _ error: Error) {
         let code = (error as? AppError)?.diagnosticCode ?? String(describing: type(of: error))
         logger.error("\(operation, privacy: .public) failed: \(code, privacy: .public)")
