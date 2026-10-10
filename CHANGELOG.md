@@ -15,14 +15,12 @@ All notable changes to this project are recorded here. Format: [Keep a Changelog
 
 ### Changed
 - **Public site**: landing, privacy, terms and support pages in `site/`, published with GitHub Pages; the app's links point there. The policy and terms are drafts awaiting legal review.
+- **No sign-up.** "Get started" creates a private identity on the phone; the only thing asked for is a name. Email, password, confirmation codes and password reset are removed. A space can be backed up with Sign in with Apple (offered once after pairing, and in Settings) and restored on a new phone. Sign-out is offered only once backed up. "Delete account" is now "Delete everything". Abandoned identities are purged after 30 days. See ADR 0008.
+- The product is named **Olluva**. Invitation and widget links use the `olluva://` scheme, and the app's legal and support links point at the public site (`site/`, published with GitHub Pages).
 
 ### Fixed
 - The push environment reported to the server now comes from how the build was signed (its provisioning profile), not its configuration. A Release build run from Xcode used to register a development token as `production`, which would have stopped notifications and widget updates.
 - A push token can only be registered under one environment; registering it again replaces the other copy. Previously a rejected duplicate removed the working registration too.
-
-### Changed (earlier)
-- **No sign-up.** "Get started" creates a private identity on the phone; the only thing asked for is a name. Email, password, confirmation codes and password reset are removed. A space can be backed up with Sign in with Apple (offered once after pairing, and in Settings) and restored on a new phone. Sign-out is offered only once backed up. "Delete account" is now "Delete everything". Abandoned identities are purged after 30 days. See ADR 0008.
-- The product is named **Olluva**. Invitation and widget links use the `olluva://` scheme, and the app's legal and support links point at the public site (`site/`, published with GitHub Pages).
 
 ### Deployed
 - Server functions are live, and push notifications are sent the moment a note is saved (verified: Apple accepted a notification for a real device). A once-a-minute sweep retries anything missed.
