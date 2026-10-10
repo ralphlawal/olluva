@@ -546,3 +546,36 @@ final class TestClock: @unchecked Sendable {
         lock.withLock { current = current.addingTimeInterval(seconds) }
     }
 }
+
+final class DemoArrangementTests: XCTestCase {
+    func testAWaitingSpaceWithAKnownCodeCanBeJoined() async throws {
+        let world = LocalWorld()
+        let sam = world.addAccount(name: "Sam", email: "sam@example.test")
+        world.addWaitingSpace(owner: sam, invitationCode: "SAMSAM2345")
+        let alex = world.addAccount(name: "Alex", email: "alex@example.test")
+        let backend = LocalBackend(world: world, signedInAs: alex)
+
+        let preview = try await backend.previewInvitation(code: "samsa-m2345")
+        XCTAssertEqual(preview.inviterName, "Sam")
+        try await backend.acceptInvitation(code: "SAMSAM2345")
+        let state = try await backend.spaceState()
+        XCTAssertEqual(state.partner?.id, sam)
+    }
+
+    func testSendFailureLeavesReadsWorking() async throws {
+        let world = LocalWorld()
+        let a = world.addAccount(name: "A", email: "a@example.test")
+        let b = world.addAccount(name: "B", email: "b@example.test")
+        let couple = world.pair(a, b)
+        let backend = LocalBackend(world: world, signedInAs: a)
+        world.setSendFailure(.offline)
+        do {
+            _ = try await backend.send(id: UUID(), coupleID: couple, content: NoteContent(body: "x"))
+            XCTFail("expected failure")
+        } catch {
+            XCTAssertEqual(error as? AppError, .offline)
+        }
+        let notes = try await backend.recentNotes(coupleID: couple, before: nil, limit: 5)
+        XCTAssertEqual(notes, [])
+    }
+}

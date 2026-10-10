@@ -6,6 +6,8 @@ import PackageDescription
 //
 //   CoupleDomain        models, rules, validation, repository protocols. No I/O.
 //   CoupleDesign        design tokens and reusable SwiftUI components.
+//   CoupleWidgetUI      the widget snapshot store and widget views, shared by
+//                       the widget extension and the app's own previews.
 //   CoupleLocalBackend  in-memory implementation of the repositories, used by
 //                       tests, previews and the DEBUG-only demo mode.
 //   CoupleSupabase      the production implementation, on supabase-swift.
@@ -16,6 +18,7 @@ let package = Package(
     products: [
         .library(name: "CoupleDomain", targets: ["CoupleDomain"]),
         .library(name: "CoupleDesign", targets: ["CoupleDesign"]),
+        .library(name: "CoupleWidgetUI", targets: ["CoupleWidgetUI"]),
         .library(name: "CoupleLocalBackend", targets: ["CoupleLocalBackend"]),
         .library(name: "CoupleSupabase", targets: ["CoupleSupabase"]),
     ],
@@ -25,6 +28,7 @@ let package = Package(
     targets: [
         .target(name: "CoupleDomain"),
         .target(name: "CoupleDesign", dependencies: ["CoupleDomain"]),
+        .target(name: "CoupleWidgetUI", dependencies: ["CoupleDomain", "CoupleDesign"]),
         .target(name: "CoupleLocalBackend", dependencies: ["CoupleDomain"]),
         .target(
             name: "CoupleSupabase",
@@ -34,6 +38,7 @@ let package = Package(
             ]
         ),
         .testTarget(name: "CoupleDomainTests", dependencies: ["CoupleDomain"]),
+        .testTarget(name: "CoupleWidgetUITests", dependencies: ["CoupleDomain", "CoupleWidgetUI"]),
         .testTarget(
             name: "CoupleLocalBackendTests",
             dependencies: ["CoupleDomain", "CoupleLocalBackend"]

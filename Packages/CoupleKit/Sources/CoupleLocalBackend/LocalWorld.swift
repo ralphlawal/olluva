@@ -64,6 +64,7 @@ public final class LocalWorld: @unchecked Sendable {
     private var listeners: [UUID: [UUID: AsyncStream<SpaceEvent>.Continuation]] = [:]
     private var _now: @Sendable () -> Date
     private var _failure: AppError?
+    private var _sendFailure: AppError?
 
     /// The code accepted for email confirmation and password reset.
     public static let verificationCode = "123456"
@@ -93,6 +94,16 @@ public final class LocalWorld: @unchecked Sendable {
     /// While set, every backend call fails with this error (e.g. `.offline`).
     public func setFailure(_ error: AppError?) {
         lock.withLock { _failure = error }
+    }
+
+    /// While set, only sending and uploading fail: reading still works. Models
+    /// a connection that drops at the moment someone presses Send.
+    public func setSendFailure(_ error: AppError?) {
+        lock.withLock { _sendFailure = error }
+    }
+
+    var sendFailure: AppError? {
+        lock.withLock { _sendFailure }
     }
 
     // MARK: - State access
@@ -170,6 +181,19 @@ public final class LocalWorld: @unchecked Sendable {
             let when = pairedAt ?? now
             state.couples[id] = Couple(space: CoupleSpace(id: id, pairedAt: when, createdAt: when), members: [first, second])
             return id
+        }
+    }
+
+    /// Puts `owner` alone in a new space with a pending invitation of a known
+    /// code, so a demo or test has something to join.
+    public func addWaitingSpace(owner: UUID, invitationCode: String) {
+        arrange { state, now in
+            let id = UUID()
+            state.couples[id] = Couple(space: CoupleSpace(id: id, createdAt: now), members: [owner])
+            state.invitations.append(Invitation(
+                id: UUID(), coupleID: id, createdBy: owner, code: InviteCode.normalize(invitationCode),
+                status: .pending, expiresAt: now.addingTimeInterval(48 * 3600), createdAt: now
+            ))
         }
     }
 

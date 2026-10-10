@@ -294,15 +294,13 @@ public struct NewMoment: Equatable, Sendable {
     }
 }
 
-/// Keyset cursor for the memories timeline.
+/// Keyset cursor for the memories timeline: newest day first, then by id.
 public struct MemoryCursor: Equatable, Sendable {
     public let occurredOn: DayDate
-    public let createdAt: Date
     public let id: UUID
 
     public init(after memory: Memory) {
         occurredOn = memory.occurredOn
-        createdAt = memory.createdAt
         id = memory.id
     }
 }

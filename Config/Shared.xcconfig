@@ -1,0 +1,28 @@
+// Build settings shared by every target and configuration.
+// Values that differ per developer or per environment go in Secrets.xcconfig,
+// which is git-ignored. Copy Secrets.example.xcconfig to create it.
+
+// --- Identity (placeholders: change before any TestFlight build) -----------
+// APP_DISPLAY_NAME is a working title, not a cleared product name.
+APP_DISPLAY_NAME = Dearly
+APP_BUNDLE_ID = com.example.couplenotes
+APP_GROUP_ID = group.com.example.couplenotes
+DEVELOPMENT_TEAM =
+
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1
+
+// --- Backend (empty = not configured) --------------------------------------
+// Host only, no scheme: the app always connects over https.
+SUPABASE_HOST =
+SUPABASE_ANON_KEY =
+
+// --- Toolchain ---------------------------------------------------------------
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
+SWIFT_VERSION = 5.0
+TARGETED_DEVICE_FAMILY = 1
+SWIFT_EMIT_LOC_STRINGS = YES
+ENABLE_USER_SCRIPT_SANDBOXING = YES
+ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES
+
+#include? "Secrets.xcconfig"

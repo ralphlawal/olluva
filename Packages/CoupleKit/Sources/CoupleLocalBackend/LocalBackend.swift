@@ -437,6 +437,7 @@ extension LocalBackend: NoteRepository {
     public func send(id: UUID, coupleID: UUID, content: NoteContent) async throws -> Note {
         await pause()
         let uid = try user()
+        if let failure = world.sendFailure { throw failure }
         try InputRules.validate(content)
         return try world.mutate { state, now in
             try state.requireMember(uid, of: coupleID)
@@ -545,13 +546,19 @@ extension LocalBackend: MediaRepository {
     public func upload(_ data: Data, to path: String, contentType: String) async throws {
         await pause()
         let uid = try user()
+        if let failure = world.sendFailure { throw failure }
         guard data.count <= MediaPath.maximumMediaBytes else { throw AppError.mediaTooLarge }
         try world.mutate { state, _ in
             // Same rule as the storage policy: only into your own couple's folder.
             guard let coupleID = state.activeCoupleID(of: uid),
-                  path.hasPrefix("couples/\(coupleID.uuidString.lowercased())/"),
-                  state.media[path] == nil
+                  path.hasPrefix("couples/\(coupleID.uuidString.lowercased())/")
             else { throw AppError.uploadFailed }
+            // Write-once. Repeating an identical upload (a retry after a
+            // response was lost) is fine; replacing a file is not.
+            if let existing = state.media[path] {
+                guard existing == data else { throw AppError.uploadFailed }
+                return
+            }
             state.media[path] = data
         }
     }
@@ -588,10 +595,12 @@ extension LocalBackend: MemoryRepository {
         let uid = try user()
         return try world.read { state, _ in
             guard state.couples[coupleID]?.members.contains(uid) == true else { return [] }
-            let key: (Memory) -> (DayDate, Date, String) = { ($0.occurredOn, $0.createdAt, $0.id.uuidString) }
+            // Keyset order (day, id): identical to the SQL the production
+            // backend sends, so pagination behaves the same in both.
+            let key: (Memory) -> (DayDate, String) = { ($0.occurredOn, $0.id.uuidString) }
             let sorted = state.memories.filter { $0.coupleID == coupleID }.sorted { key($0) > key($1) }
             guard let cursor else { return Array(sorted.prefix(limit)) }
-            let boundary = (cursor.occurredOn, cursor.createdAt, cursor.id.uuidString)
+            let boundary = (cursor.occurredOn, cursor.id.uuidString)
             return Array(sorted.filter { key($0) < boundary }.prefix(limit))
         }
     }

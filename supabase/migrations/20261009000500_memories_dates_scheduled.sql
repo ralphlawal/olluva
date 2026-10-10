@@ -41,7 +41,7 @@ create table public.memories (
 -- A note can be saved to memories once.
 create unique index memories_one_per_source_note
   on public.memories (couple_id, source_note_id) where source_note_id is not null;
-create index memories_timeline on public.memories (couple_id, occurred_on desc, created_at desc, id desc);
+create index memories_timeline on public.memories (couple_id, occurred_on desc, id desc);
 
 create or replace function app_private.memories_before_insert()
 returns trigger
