@@ -7,14 +7,43 @@ public enum SupabaseBackendFactory {
     /// it identifies the app and grants nothing by itself; every request is
     /// authorised by the signed-in user's token against Row Level Security.
     /// The service-role key is never present in the app.
-    public static func make(url: URL, anonKey: String) -> Backend {
-        let client = SupabaseClient(supabaseURL: url, supabaseKey: anonKey)
+    public static func make(url: URL, anonKey: String, keepsSessionInMemory: Bool = false) -> Backend {
+        let client: SupabaseClient
+        if keepsSessionInMemory {
+            client = SupabaseClient(
+                supabaseURL: url, supabaseKey: anonKey,
+                options: SupabaseClientOptions(auth: .init(storage: InMemorySessionStorage()))
+            )
+        } else {
+            // The SDK's default: the session is kept in the Keychain.
+            client = SupabaseClient(supabaseURL: url, supabaseKey: anonKey)
+        }
         let repositories = SupabaseRepositories(client: client)
         return Backend(
             auth: repositories, profiles: repositories, couples: repositories, notes: repositories,
             realtime: repositories, media: repositories, memories: repositories, dates: repositories,
             schedule: repositories, notifications: repositories, entitlements: repositories, isDemo: false
         )
+    }
+}
+
+/// Holds a session for the life of the process only. Used by the live tests,
+/// where two people's sessions exist side by side and nothing should be left
+/// in the Keychain. The app never uses this.
+final class InMemorySessionStorage: AuthLocalStorage, @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [String: Data] = [:]
+
+    func store(key: String, value: Data) throws {
+        lock.withLock { values[key] = value }
+    }
+
+    func retrieve(key: String) throws -> Data? {
+        lock.withLock { values[key] }
+    }
+
+    func remove(key: String) throws {
+        lock.withLock { values[key] = nil }
     }
 }
 
@@ -270,7 +299,11 @@ extension SupabaseRepositories: NoteRepository {
         try await run {
             var query = client.from("notes").select().eq("couple_id", value: coupleID)
             if let before {
-                query = query.lt("created_at", value: ISO8601DateFormatter.fractional.string(from: before))
+                // The server keeps microseconds; a Date formatted to the nearest
+                // millisecond can land just after the note it came from and
+                // return that note again. Rounding down cannot.
+                let floored = Date(timeIntervalSince1970: (before.timeIntervalSince1970 * 1000).rounded(.down) / 1000)
+                query = query.lt("created_at", value: ISO8601DateFormatter.fractional.string(from: floored))
             }
             let rows: [NoteRow] = try await query
                 .order("created_at", ascending: false).order("id", ascending: false).limit(limit).execute().value

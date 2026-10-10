@@ -62,7 +62,7 @@ supabase db push                       # applies supabase/migrations
 
 Then, in the dashboard:
 
-1. **Database → Extensions**: enable `pg_cron` and `pg_net`. Re-run the last migration's cron block, or simply run:
+1. **Database → Extensions**: `pg_cron` and `pg_net` are enabled by the first migration, and the jobs below are created by later ones. Check they exist with `select jobname from cron.job;`. If any are missing, run:
    ```sql
    select cron.schedule('deliver-scheduled-messages', '* * * * *', 'select app_private.deliver_due_scheduled_messages()');
    select cron.schedule('enqueue-date-reminders', '5 * * * *', 'select app_private.enqueue_date_reminders()');

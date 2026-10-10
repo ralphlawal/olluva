@@ -41,8 +41,14 @@ The content is intimate. People have no account: each phone holds an anonymous i
 - Export: `export_my_data()` returns everything the caller authored as JSON, including from spaces that have ended. It never includes the partner's content. Media files are referenced by path, not embedded.
 - Deletion ("Delete everything"): the `delete-account` function identifies the caller from their token only, runs `prepare_account_deletion` (ends the space, deletes authored notes, memories and surprises, queues media), then deletes the auth user; foreign keys cascade the rest. Deleting an account does not cancel an App Store subscription, and the app says so.
 
+## Verified against the hosted project (10 October 2026)
+`supabase/tests/live-check.mjs` attacks the deployed project through its public API using only the publishable key: 36 checks, all passing. It covers anonymous sign-in, pairing, cross-couple reads and writes, impersonation, server-only columns and functions, self-granted subscriptions, and the real Storage API (cross-couple download and upload, public access, overwrite, client delete, non-image upload, access after unlinking). The app's own client passes `CoupleSupabaseLiveTests` against the same project, including Realtime delivery.
+
+### One behaviour to know about: the CDN
+Supabase's CDN keeps a copy of a private file for the exact session that already downloaded it. So after unlinking, a person can keep fetching, by its unchanged URL, a photo **they had already downloaded**, until their access token expires (at most an hour). Nobody else can: a partner who had not fetched it, another couple and an unauthenticated caller are all refused, and any request that reaches Storage itself is refused. The person already had those bytes, so nothing new is exposed, but revocation of media is not instantaneous at the edge. Deleting the object (the purge worker) invalidates the cached copy.
+
 ## Not yet verified
-Everything in the table above is tested against a real Postgres with a shim for Supabase's roles and `auth.uid()`. It has **not** been run against a hosted Supabase project. Before launch: apply the migrations to a staging project, run the Supabase security advisor, and repeat the cross-couple tests through the real API with two real accounts. Storage policies in particular should be re-tested there, since the shim only models the `storage.objects` table.
+The Supabase Security Advisor has not been run on the project. The Edge Functions are not deployed, so purchase verification, push delivery, storage purge and account deletion have not run for real. Sign in with Apple backup and restore have not been exercised against Apple.
 
 ## Reporting a vulnerability
 Add a security contact before launch (placeholder: security@example.com).

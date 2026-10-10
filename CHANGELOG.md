@@ -17,7 +17,11 @@ All notable changes to this project are recorded here. Format: [Keep a Changelog
 - **No sign-up.** "Get started" creates a private identity on the phone; the only thing asked for is a name. Email, password, confirmation codes and password reset are removed. A space can be backed up with Sign in with Apple (offered once after pairing, and in Settings) and restored on a new phone. Sign-out is offered only once backed up. "Delete account" is now "Delete everything". Abandoned identities are purged after 30 days. See ADR 0008.
 - The product is named **Olluva**. Invitation and widget links use the `olluva://` scheme, and the app's legal and support links point at www.olluva.app.
 
+### Deployed
+- The database is live on the `olluva` Supabase project (eu-west-1): 11 migrations, anonymous sign-ins and manual linking on, five scheduled jobs running.
+
 ### Fixed during development
+- Paging back through notes could return the boundary note twice (found by the live client test).
 - A shared media-release trigger read a column that exists on only one of its tables, breaking every note update (caught by the database tests).
 - The invitation code field rewrote its text on each keystroke and dropped characters when typed quickly (caught by UI tests).
 - Form titles scrolled underneath the status bar with no bar background (caught in simulator review).

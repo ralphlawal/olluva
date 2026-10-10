@@ -39,6 +39,9 @@ let package = Package(
         ),
         .testTarget(name: "CoupleDomainTests", dependencies: ["CoupleDomain"]),
         .testTarget(name: "CoupleWidgetUITests", dependencies: ["CoupleDomain", "CoupleWidgetUI"]),
+        // Talks to a real Supabase project. Skipped unless SUPABASE_HOST and
+        // SUPABASE_KEY are set in the environment; see TESTING.md.
+        .testTarget(name: "CoupleSupabaseLiveTests", dependencies: ["CoupleDomain", "CoupleSupabase"]),
         .testTarget(
             name: "CoupleLocalBackendTests",
             dependencies: ["CoupleDomain", "CoupleLocalBackend"]

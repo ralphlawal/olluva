@@ -4,7 +4,7 @@ A private iOS app for two people. Leave each other notes, drawings and photos th
 
 Native Swift and SwiftUI, WidgetKit, StoreKit 2, with a Supabase backend. iPhone, iOS 17+.
 
-> **Status: pre-release.** The app runs end to end in the simulator on an in-memory demo backend, and the backend's rules are tested against a real Postgres. It has **not** yet been connected to a hosted Supabase project, signed for a device, or submitted anywhere. What is and is not verified is listed under [Known limitations](#known-limitations).
+> **Status: pre-release.** The database is deployed to a hosted Supabase project, and both its security rules and the app's client have been tested against it. The app runs on a device. The server functions (push, purchases, deletion) are not deployed yet, and nothing has been submitted anywhere. What is and is not verified is listed under [Known limitations](#known-limitations).
 
 ## Quick start
 ```sh
@@ -48,17 +48,17 @@ These are implemented and their logic is tested locally, but they need credentia
 
 | Area | What is needed | What has been verified instead |
 | --- | --- | --- |
-| Supabase backend | A project; `supabase db push` | Migrations applied to Postgres 17 with a shim for Supabase's roles; security rules tested there |
-| Supabase client (`CoupleSupabase`) | A project URL and anon key | Compiles against supabase-swift 2.55; not run against a server |
-| Realtime | A project | Event handling tested on the in-memory backend |
+| Running the app itself against the server on two phones | Two devices | The client library is verified against the server (below); the full app on two real phones is not |
 | Edge Functions | Deployment (Deno) | JWS verification, subscription mapping and notification text tested with Node; the HTTP handlers themselves have not been run |
 | `pg_cron` jobs | The extension enabled | The functions they call are tested; the schedules are not |
 | Push notifications | APNs key, signed build, real device | Token registration and outbox logic tested; no push has been sent |
-| Starting without sign-up (anonymous identity) | Anonymous sign-ins enabled in a Supabase project | Flow tested on the in-memory backend; database rules tested with anonymous users |
 | Backup and restore with Sign in with Apple | The capability on a signed build; Apple provider and manual linking enabled in Supabase | Flow tested on the in-memory backend with a stand-in for the Apple ID; the real Apple and Supabase exchange has not run |
 | Widgets on a Home or Lock Screen | A signed build with the App Group | Snapshot store tested; widget views rendered inside the app; extension builds and embeds |
 | Purchases (StoreKit 2) | A development team for signing (then `PurchaseStoreTests` run locally); App Store Connect products and a sandbox account for the real thing | **Nothing end to end.** The purchase code compiles and the paywall's unavailable state is tested; the 7 StoreKit tests skip without a signing team |
 | Partner unlocking from a purchase | Deployed `verify-purchase` | Database entitlement rules tested |
+
+### Verified against the hosted project
+Schema and policies (36 live API checks), anonymous sign-in, pairing, notes, Realtime delivery, private media through the real Storage API, memories, dates, scheduling, themes, notification preferences, device tokens, avatars and export, all through the app's own Supabase client. See TESTING.md.
 
 ### Not built
 - End-to-end encryption (see ADR 0007). The app does not claim it.

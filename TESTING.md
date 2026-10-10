@@ -15,6 +15,27 @@ Builds: Debug and Release both build for the simulator, including the widget ext
 
 **The 7 skipped tests are the StoreKit purchase tests.** StoreKit's local test service only serves apps that are "installed for development", which needs a development team for signing. None is configured on the machine these ran on, so the service refused the configuration (`com.example.couplenotes is not installed for development` in the `storekitd` log). The tests skip with that message instead of failing. Purchase, restore, expiry, refund, pending approval and account binding are therefore **not verified**. Set `DEVELOPMENT_TEAM` and re-run `scripts/build.sh test -only-testing:CoupleNotesTests/PurchaseStoreTests`.
 
+## 0. Against the hosted project
+Two suites talk to the real Supabase project. Both need only the publishable key, both create anonymous identities and rows, and both are skipped or not run by default.
+
+```sh
+# 36 checks through the public API, as an attacker would reach it
+cd supabase/tests
+SUPABASE_HOST=<ref>.supabase.co SUPABASE_KEY=<publishable key> node live-check.mjs
+
+# The app's own client, two people, every repository, including Realtime
+cd Packages/CoupleKit
+SUPABASE_HOST=<ref>.supabase.co SUPABASE_KEY=<publishable key> swift test --filter CoupleSupabaseLiveTests
+```
+Last run 10 October 2026 against the `olluva` project: 36 of 36, and the client test passing. The client test found one real bug, since fixed: paging back through notes rounded a timestamp up and returned the boundary note twice.
+
+To remove what they create (SQL editor, as an administrator; only safe while the project has no real users):
+```sql
+delete from public.couple_spaces;
+delete from auth.users where is_anonymous
+  and id in (select id from public.profiles where display_name like 'Live%' or display_name = '');
+```
+
 ## 1. Database and Edge Functions — `supabase/tests`
 ```sh
 cd supabase/tests && npm install && npm test
@@ -79,7 +100,6 @@ Every test attaches screenshots to the result bundle. A failing test also captur
 ## What automated tests do not cover
 | Area | Why | How to verify |
 | --- | --- | --- |
-| Anything against hosted Supabase | No project or credentials | SETUP.md §4, then repeat the cross-couple checks through the real API |
 | Edge Function HTTP handlers | Need Deno and a deployment | `supabase functions serve` and call them |
 | Push notifications | Need an APNs key and a device | APP_STORE_CHECKLIST.md "TestFlight" step 5 |
 | Widgets on the Home and Lock Screen | Cannot be driven from a test; need the App Group on a signed build | Add the widget by hand on a device |

@@ -87,9 +87,6 @@
     "2 weeks before" : {
 
     },
-    "123456" : {
-
-    },
     "A blank page" : {
 
     },
@@ -103,9 +100,6 @@
 
     },
     "A much bigger scrapbook" : {
-
-    },
-    "A new code is on its way." : {
 
     },
     "A note can hold up to %lld stickers." : {
@@ -198,19 +192,34 @@
     "Arrives %@" : {
 
     },
-    "At least 8 characters." : {
+    "Automatic" : {
 
     },
-    "Automatic" : {
+    "Back up if you want to" : {
+
+    },
+    "Back up your space" : {
+
+    },
+    "Backed up" : {
+
+    },
+    "Backed up with your Apple ID" : {
+
+    },
+    "Backed up with your Apple ID." : {
+
+    },
+    "Backing up links your space to your Apple ID. That’s all: we don’t ask Apple for your name or email." : {
+
+    },
+    "Because there’s no account, losing this phone would mean losing your space. You can attach your Apple ID as a backup so you can restore it on a new phone." : {
 
     },
     "Birthday" : {
 
     },
     "Bold" : {
-
-    },
-    "By continuing you agree to the Terms and Privacy Policy linked in Settings." : {
 
     },
     "Cancel" : {
@@ -225,22 +234,10 @@
     "Cancelled" : {
 
     },
-    "Change password" : {
-
-    },
     "Change photo" : {
 
     },
-    "Check your email" : {
-
-    },
     "Choose a different photo" : {
-
-    },
-    "Choose a new password" : {
-
-    },
-    "Choose a password" : {
 
     },
     "Choose a photo" : {
@@ -255,16 +252,10 @@
     "Close and keep trying" : {
 
     },
-    "Code" : {
-
-    },
     "Code copied" : {
 
     },
     "Coming up" : {
-
-    },
-    "Confirm" : {
 
     },
     "Connected" : {
@@ -288,12 +279,6 @@
     "Covers you and your partner" : {
 
     },
-    "Create account" : {
-
-    },
-    "Create your account. You’ll invite your partner next." : {
-
-    },
     "Custom accent" : {
 
     },
@@ -312,25 +297,19 @@
     "Delete" : {
 
     },
-    "Delete account" : {
-
-    },
     "Delete date" : {
 
     },
-    "Delete for both of us" : {
+    "Delete everything" : {
 
     },
-    "Delete my account" : {
+    "Delete for both of us" : {
 
     },
     "Delete this date?" : {
 
     },
     "Delete this note?" : {
-
-    },
-    "Delete your account" : {
 
     },
     "Deleting your account doesn’t cancel a subscription. Cancel it in your Apple ID settings so you aren’t charged again." : {
@@ -393,16 +372,7 @@
     "Edit surprise" : {
 
     },
-    "Email" : {
-
-    },
-    "Enter a valid email address." : {
-
-    },
     "Enter the code your partner sent you." : {
-
-    },
-    "Enter your email and we’ll send you a code." : {
 
     },
     "Enter your invitation" : {
@@ -445,9 +415,6 @@
 
     },
     "First met" : {
-
-    },
-    "Forgot your password?" : {
 
     },
     "Forty-one boxes and one confused cat" : {
@@ -510,9 +477,6 @@
     "Hide note text on the Lock Screen" : {
 
     },
-    "Hide password" : {
-
-    },
     "Hold on a moment." : {
 
     },
@@ -531,7 +495,7 @@
     "Hug" : {
 
     },
-    "I already have an account" : {
+    "I already have a space" : {
 
     },
     "I have an invitation" : {
@@ -546,10 +510,19 @@
     "I’m sorry." : {
 
     },
-    "If there’s an account for %@, a code is on its way. Enter it with your new password." : {
+    "If they’ve added the widget, your note appears there. iOS decides exactly when widgets refresh, so it can take a little while." : {
 
     },
-    "If they’ve added the widget, your note appears there. iOS decides exactly when widgets refresh, so it can take a little while." : {
+    "If this phone is lost, reset or replaced, your space can’t be recovered without a backup." : {
+
+    },
+    "If you backed up with your Apple ID on your old phone, sign in with it here and everything comes back." : {
+
+    },
+    "If you change or lose this phone, install the app, choose “I already have a space” and sign in with your Apple ID." : {
+
+    },
+    "If you never backed up, there’s nothing to restore. Go back and tap Get started, then ask your partner for a new invitation." : {
 
     },
     "Important dates" : {
@@ -635,6 +608,9 @@
         }
       }
     },
+    "Keep your space safe" : {
+
+    },
     "Kind" : {
 
     },
@@ -648,9 +624,6 @@
 
     },
     "Leave each other notes, drawings and photos that show up right on your Home Screen." : {
-
-    },
-    "Let’s begin" : {
 
     },
     "Lettering" : {
@@ -722,7 +695,10 @@
     "New notes" : {
 
     },
-    "New password" : {
+    "No account needed. How your notes stay private" : {
+
+    },
+    "No account, no email" : {
 
     },
     "No purchases to restore" : {
@@ -761,6 +737,9 @@
     "Notifications are turned off for this app in iOS Settings." : {
 
     },
+    "On a new phone, sign in with the same Apple ID and everything comes back." : {
+
+    },
     "On the day" : {
 
     },
@@ -777,6 +756,9 @@
 
     },
     "Only I can see this" : {
+
+    },
+    "Only on this phone" : {
 
     },
     "Only the person who wrote this can change it." : {
@@ -815,9 +797,6 @@
     "Paper %@" : {
 
     },
-    "Password" : {
-
-    },
     "Payment is charged to your Apple ID. Subscriptions renew automatically at the price shown unless cancelled at least 24 hours before the end of the period. Manage or cancel any time in your Apple ID settings." : {
 
     },
@@ -854,9 +833,6 @@
     "Plan many surprises at once" : {
 
     },
-    "Please confirm your email first. We’ve sent you a code." : {
-
-    },
     "Plum" : {
 
     },
@@ -888,9 +864,6 @@
 
     },
     "Privacy Policy" : {
-
-    },
-    "Private to the two of you. How it works" : {
 
     },
     "Protected in transit and at rest" : {
@@ -935,10 +908,10 @@
     "Repeats" : {
 
     },
-    "Reset your password" : {
+    "Restore purchases" : {
 
     },
-    "Restore purchases" : {
+    "Restore your space" : {
 
     },
     "Rounded" : {
@@ -951,9 +924,6 @@
 
     },
     "Save a note you want to keep, or write down a moment worth remembering." : {
-
-    },
-    "Save and sign in" : {
 
     },
     "Save changes" : {
@@ -989,13 +959,7 @@
     "Send" : {
 
     },
-    "Send a new code" : {
-
-    },
     "Send a photo" : {
-
-    },
-    "Send code" : {
 
     },
     "Send it later" : {
@@ -1034,19 +998,16 @@
     "Sharing this space since %@" : {
 
     },
-    "Show password" : {
-
-    },
     "Show what a note says" : {
-
-    },
-    "Sign in" : {
 
     },
     "Sign in with Apple isn’t available right now." : {
 
     },
     "Sign out" : {
+
+    },
+    "Sign out of this phone" : {
 
     },
     "Sign out?" : {
@@ -1112,9 +1073,6 @@
     "Tell me about" : {
 
     },
-    "Tell us what your partner calls you." : {
-
-    },
     "Template" : {
 
     },
@@ -1127,10 +1085,7 @@
     "Terms of Use" : {
 
     },
-    "That code isn’t right, or it has expired." : {
-
-    },
-    "That email and password don’t match." : {
+    "That Apple ID already backs up a different space. To use it here, restore that space instead." : {
 
     },
     "That image couldn’t be opened." : {
@@ -1190,7 +1145,7 @@
     "There’s a problem with your payment. Update it in your Apple ID settings to keep Premium." : {
 
     },
-    "There’s already an account with that email. Try signing in." : {
+    "There’s no account, so right now your space exists only on this phone." : {
 
     },
     "Thick line" : {
@@ -1211,7 +1166,7 @@
     "This can’t be undone." : {
 
     },
-    "This closes the space you share. It’s different from deleting your account." : {
+    "This closes the space you share. It’s different from deleting everything." : {
 
     },
     "This has already been delivered or cancelled." : {
@@ -1229,7 +1184,10 @@
     "This note is gone" : {
 
     },
-    "This permanently removes you and what you’ve made. It can’t be undone." : {
+    "This permanently removes you and what you’ve made, from this phone and from our servers. It can’t be undone." : {
+
+    },
+    "This phone is no longer connected to your space." : {
 
     },
     "This was changed somewhere else. We’ve loaded the latest version." : {
@@ -1302,13 +1260,7 @@
         }
       }
     },
-    "Update password" : {
-
-    },
     "Us" : {
-
-    },
-    "Use at least 8 characters for your password." : {
 
     },
     "Useful when you’re planning something. Your partner won’t see the date or get reminders." : {
@@ -1332,9 +1284,6 @@
     "We couldn’t verify that purchase with Apple." : {
 
     },
-    "We sent a 6-digit code to %@." : {
-
-    },
     "We’ll hold this note and deliver it at the time you choose, even if your phone is off. Until then only you can see it." : {
 
     },
@@ -1345,9 +1294,6 @@
 
     },
     "We’ll send it when you’re back online" : {
-
-    },
-    "Welcome back" : {
 
     },
     "What happened" : {
@@ -1377,6 +1323,9 @@
     "Widgets aren’t available in this build because its App Group isn’t set up." : {
 
     },
+    "Without a backup, losing this phone means losing your space" : {
+
+    },
     "Words" : {
 
     },
@@ -1401,7 +1350,13 @@
     "You already have a surprise waiting. Premium lets you plan more." : {
 
     },
-    "You can export what you’ve written or delete your account, and what you wrote with it, at any time from Settings." : {
+    "You can export what you’ve written or delete everything, at any time, from Settings." : {
+
+    },
+    "You can restore it on a new phone with your Apple ID" : {
+
+    },
+    "You don’t sign up. Your phone holds a private key to your space. We never ask for your email, phone number or contacts." : {
 
     },
     "You have Premium until %@. It won’t renew." : {
@@ -1413,16 +1368,19 @@
     "You have Premium. It renews on %@." : {
 
     },
-    "You were signed out. Sign in again to pick up where you left off." : {
+    "You stay set up on this phone, and can pair again with %@ or someone else." : {
+
+    },
+    "You were signed out on this phone. If you backed up your space, you can restore it." : {
 
     },
     "You’ll be able to send each other notes, and see everything in the space you share. You can leave at any time." : {
 
     },
-    "You’ll stay signed in on this phone." : {
+    "You’re already connected to a partner." : {
 
     },
-    "You’re already connected to a partner." : {
+    "You’re connected with %@. Since there’s no account, your space lives only on this phone for now." : {
 
     },
     "You’re not in a shared space yet." : {
@@ -1431,19 +1389,7 @@
     "You’re offline. We’ll keep this safe until you’re back." : {
 
     },
-    "You’ve been signed out. Please sign in again." : {
-
-    },
     "You’ve reached the limit for saved dates." : {
-
-    },
-    "you@example.com" : {
-
-    },
-    "Your account stays. You can pair again, with %@ or someone else." : {
-
-    },
-    "Your account, profile and sign-in are erased." : {
 
     },
     "Your invitation" : {
@@ -1458,13 +1404,13 @@
     "Your notes are for two people." : {
 
     },
-    "Your notes stay safe in your shared space. This phone stops receiving them until you sign in again." : {
+    "Your notes stay safe in your shared space. To come back, choose “I already have a space” and sign in with your Apple ID." : {
 
     },
     "your partner" : {
 
     },
-    "Your password" : {
+    "Your partner, notes and memories return exactly as they were." : {
 
     },
     "Your Premium" : {
@@ -1474,6 +1420,9 @@
 
     },
     "Your profile" : {
+
+    },
+    "Your profile, and any backup, are erased." : {
 
     },
     "Your purchase is waiting for approval. Premium unlocks as soon as it’s approved." : {
@@ -1494,7 +1443,13 @@
     "Your space" : {
 
     },
+    "Your space is backed up" : {
+
+    },
     "Your space is for two. One of you sends an invitation and the other accepts it." : {
+
+    },
+    "Your space on this phone" : {
 
     },
     "Yours to take or remove" : {
