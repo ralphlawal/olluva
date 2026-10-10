@@ -374,7 +374,11 @@ extension SupabaseRepositories: RealtimeRepository {
         AsyncStream { continuation in
             let task = Task {
                 let id = coupleID.uuidString.lowercased()
-                let channel = client.channel("space-\(id)")
+                // A name unique to this subscription. The app stops and restarts
+                // listening for the same space (when a partner joins, for one);
+                // with a shared name, the old subscription closing would tear
+                // down the new one, and live updates would silently stop.
+                let channel = client.channel("space-\(id)-\(UUID().uuidString.lowercased())")
                 let byCouple = RealtimePostgresFilter.eq("couple_id", value: id)
 
                 // Realtime applies the same RLS SELECT policies as the API, so

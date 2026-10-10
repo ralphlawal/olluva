@@ -21,6 +21,7 @@ All notable changes to this project are recorded here. Format: [Keep a Changelog
 - The database is live on the `olluva` Supabase project (eu-west-1): 11 migrations, anonymous sign-ins and manual linking on, five scheduled jobs running.
 
 ### Fixed during development
+- Live updates stopped for the person who sent the invitation: their connection was restarted when the partner joined, and the old connection closing took the new one down. Each connection now has its own channel (found on a real device, reproduced by the live client test).
 - Paging back through notes could return the boundary note twice (found by the live client test).
 - A shared media-release trigger read a column that exists on only one of its tables, breaking every note update (caught by the database tests).
 - The invitation code field rewrote its text on each keystroke and dropped characters when typed quickly (caught by UI tests).

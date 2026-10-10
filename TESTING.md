@@ -27,14 +27,16 @@ SUPABASE_HOST=<ref>.supabase.co SUPABASE_KEY=<publishable key> node live-check.m
 cd Packages/CoupleKit
 SUPABASE_HOST=<ref>.supabase.co SUPABASE_KEY=<publishable key> swift test --filter CoupleSupabaseLiveTests
 ```
-Last run 10 October 2026 against the `olluva` project: 36 of 36, and the client test passing. The client test found one real bug, since fixed: paging back through notes rounded a timestamp up and returned the boundary note twice.
+Last run 10 October 2026 against the `olluva` project: 36 of 36, and the client test passing. The client test has found two real bugs, both fixed: paging back through notes returned the boundary note twice, and restarting the live connection for the same space (which the app does when a partner joins) silently stopped live updates.
 
-To remove what they create (SQL editor, as an administrator; only safe while the project has no real users):
+To remove what they create without touching real users (SQL editor, as an administrator):
 ```sql
-delete from public.couple_spaces;
-delete from auth.users where is_anonymous
-  and id in (select id from public.profiles where display_name like 'Live%' or display_name = '');
+with t as (select id from public.profiles where display_name like 'Live%')
+delete from public.couple_spaces
+where id in (select couple_id from public.couple_members where user_id in (select id from t));
+delete from auth.users where id in (select id from public.profiles where display_name like 'Live%');
 ```
+`live-check.mjs` names its identities `LiveAda`, `LiveBen`, `LiveCal`, `LiveDee`; the client test uses `Live Ada` and `Live Ben`.
 
 ## 1. Database and Edge Functions — `supabase/tests`
 ```sh

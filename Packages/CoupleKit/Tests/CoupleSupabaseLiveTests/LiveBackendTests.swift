@@ -76,6 +76,13 @@ final class LiveBackendTests: XCTestCase {
         XCTAssertNotNil(space.space?.pairedAt)
         await assertThrows(.alreadyPaired) { _ = try await ada.couples.createInvitation() }
 
+        // --- Realtime survives being restarted for the same space. The app does
+        // exactly this to the inviter: it listens while waiting alone, then
+        // starts listening again the moment the partner joins.
+        let earlier = Task { for await _ in ben.realtime.events(coupleID: coupleID) {} }
+        try await Task.sleep(for: .seconds(2))
+        earlier.cancel()
+
         // --- Realtime: Ben is listening when Ada sends.
         let received = expectation(description: "Ben receives Ada's note live")
         received.assertForOverFulfill = false
