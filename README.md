@@ -53,7 +53,7 @@ These are implemented and their logic is tested locally, but they need credentia
 | `delete-account`, `purge-storage` | Exercising them for real | Deployed; they start and refuse unauthorised calls. Not yet run to completion |
 | Scheduled delivery on the real server | Scheduling a note and waiting | Jobs are installed and running; a scheduled note has not been watched arriving |
 | Backup and restore with Sign in with Apple | The capability on a signed build; Apple provider and manual linking enabled in Supabase | Flow tested on the in-memory backend with a stand-in for the Apple ID; the real Apple and Supabase exchange has not run |
-| Widget timing over a full day | Living with it on a phone | Verified on an iPhone 16: the Home Screen widget shows notes, and updates within seconds of a push with the app closed. Not measured: how often iOS lets it self-refresh, Low Power Mode, the Lock Screen variants |
+| Widget timing over a full day | Living with it on a phone | Verified on an iPhone 16 (iOS 26.6) with the app closed: the widget redraws about 3 seconds after a note is sent, and again 3 seconds after it is deleted. Not measured: iOS 17 to 25 (no widget push there), Low Power Mode, the Lock Screen variants, and Apple's daily budget for widget pushes |
 | Purchases (StoreKit 2) | A development team for signing (then `PurchaseStoreTests` run locally); App Store Connect products and a sandbox account for the real thing | **Nothing end to end.** The purchase code compiles and the paywall's unavailable state is tested; the 7 StoreKit tests skip without a signing team |
 | Partner unlocking from a purchase | Deployed `verify-purchase` | Database entitlement rules tested |
 

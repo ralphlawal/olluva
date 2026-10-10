@@ -97,12 +97,15 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         AppGroupID: $(APP_GROUP_ID)
+        PushEnvironment: $(APS_ENVIRONMENT)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
       path: Widgets/CoupleNotesWidgets.entitlements
       properties:
         com.apple.security.application-groups: [$(APP_GROUP_ID)]
+        # Widget push updates (iOS 26+) need the push entitlement on the widget itself.
+        aps-environment: $(APS_ENVIRONMENT)
   # Runs when a push arrives, even if the app is closed, and refreshes the
   # widget from the server. See NotificationService.swift.
   CoupleNotesNotifications:

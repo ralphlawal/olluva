@@ -29,3 +29,18 @@ A widget that shows a note its author has deleted is a privacy failure, not a co
 
 ## Verification
 Verified on an iPhone 16: with the app not running, a note inserted on the server caused the widget token to be used 2 seconds later. Database rules for the token are covered by `accounts.test.js` ("widget tokens"); payload mapping by `WidgetRemoteTests`. Not verified: behaviour under Low Power Mode, and the actual interval iOS grants timeline refreshes over a full day.
+
+## Addendum, same day: widget push updates
+
+Measuring on the device showed a second problem. The notification extension fetched the new note within seconds, but iOS did not act on its request to reload the widget: no timeline fetch followed in 45 seconds. A reload requested from an extension is evidently budgeted or ignored.
+
+iOS 26 provides the supported mechanism: **widget push updates**. The widget configuration declares a `WidgetPushHandler`; iOS issues the device's widgets a push token (80 bytes); the server sends an APNs request with push type `widgets` to the topic `<bundle id>.push-type.widgets` and the payload `{"aps":{"content-changed":true}}`; iOS reloads the widget, whose timeline provider fetches the content with the widget token.
+
+- The widget extension carries the `aps-environment` entitlement.
+- The app registers the token on every launch via `WidgetCenter.currentPushInfo` (iOS reports it to the extension only when it changes).
+- The server sends a widget push for every new note, surprise, edit and deletion, independent of notification permission and preferences.
+- On iOS 17 to 25 the widget has no push handler and relies on the notification extension and its timeline.
+
+Measured on an iPhone 16 running iOS 26.6 with the app closed: a new note redrew the widget 3 seconds later; deleting that note redrew it 3 seconds later. The server now records push-triggered fetches and timeline fetches separately (`widget_tokens.push_fetches`, `timeline_fetches`), which is how this was measured and how it can be checked again.
+
+Two mistakes made while building this, both now covered by tests: the push-token check used a regex repetition count above Postgres's limit of 255, so no token could be stored; and the registration function cleared a push token from other rows before checking that the caller's widget token was valid.

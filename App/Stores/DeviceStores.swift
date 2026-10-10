@@ -181,6 +181,22 @@ final class WidgetBridge {
         }
     }
 
+    /// Hands the server the widgets' push token (iOS 26+), so it can tell iOS
+    /// to reload them the moment a note changes. iOS also reports the token to
+    /// the widget extension, but only when it changes; asking here on every
+    /// launch means an existing widget is covered straight away.
+    func registerWidgetPush(environment: PushEnvironment) async {
+        guard let store, store.loadRemoteConfig() != nil else { return }
+        if #available(iOS 26.0, *) {
+            guard let info = await WidgetCenter.shared.currentPushInfo else {
+                Diagnostics.trace("widget: no push token yet (no widget on the Home Screen?)")
+                return
+            }
+            let ok = await WidgetRemoteRefresher.registerPushToken(info.token, environment: environment.rawValue, store: store)
+            Diagnostics.trace("widget: push token (\(info.token.count) bytes) registered=\(ok)")
+        }
+    }
+
     func revokeRemote(backend: Backend) async {
         guard let token = store?.loadRemoteConfig()?.token else { return }
         try? await backend.notifications.revokeWidgetToken(token)

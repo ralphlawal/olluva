@@ -23,7 +23,7 @@ final class NotificationService: UNNotificationServiceExtension {
         Task {
             if let store = WidgetSnapshotStore(appGroupID: groupID) {
                 // Comfortably inside the roughly 30 seconds iOS allows.
-                let outcome = await WidgetRemoteRefresher.refresh(store: store, timeout: 15)
+                let outcome = await WidgetRemoteRefresher.refresh(store: store, source: .push, timeout: 15)
                 if outcome == .updated || outcome == .revoked {
                     WidgetCenter.shared.reloadAllTimelines()
                 }

@@ -22,6 +22,7 @@ All notable changes to this project are recorded here. Format: [Keep a Changelog
 - The database is live on the `olluva` Supabase project (eu-west-1): 11 migrations, anonymous sign-ins and manual linking on, five scheduled jobs running.
 
 ### Fixed during development
+- The widget still did not redraw when a note arrived: iOS ignored reload requests made from the notification extension. The server now sends iOS 26 widget push updates, which redraw the widget within seconds for new, edited and deleted notes, with the app closed (measured on device).
 - The widget did not update unless the app was opened. iOS was not delivering silent pushes, and never wakes a closed app. The widget now fetches for itself with a narrow read-only token, and a notification extension refreshes it when a push arrives, even with the app closed (ADR 0009).
 - A deleted note could stay on the partner's widget. Deletes and edits now queue a refresh, and the widget corrects itself on its own schedule.
 - If iOS launched the app in the background for a push, it never finished starting up.

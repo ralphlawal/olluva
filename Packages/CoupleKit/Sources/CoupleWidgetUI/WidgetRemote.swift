@@ -108,8 +108,13 @@ public enum WidgetRemoteRefresher {
         return try decoder.decode(Payload.self, from: data)
     }
 
+    /// Who is asking, reported to the server as a count for diagnostics.
+    public enum Source: String, Sendable {
+        case push, timeline
+    }
+
     @discardableResult
-    public static func refresh(store: WidgetSnapshotStore, timeout: TimeInterval = 10) async -> Outcome {
+    public static func refresh(store: WidgetSnapshotStore, source: Source, timeout: TimeInterval = 10) async -> Outcome {
         guard let config = store.loadRemoteConfig() else { return .notConfigured }
 
         let configuration = URLSessionConfiguration.ephemeral
@@ -123,6 +128,7 @@ public enum WidgetRemoteRefresher {
         request.httpMethod = "POST"
         request.setValue(config.token, forHTTPHeaderField: "x-widget-token")
         request.setValue(config.apiKey, forHTTPHeaderField: "apikey")
+        request.setValue(source.rawValue, forHTTPHeaderField: "x-widget-source")
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.httpBody = Data("{}".utf8)
 
@@ -163,6 +169,28 @@ public enum WidgetRemoteRefresher {
         } catch {
             return .failed
         }
+    }
+
+    /// Gives the server the widget's own push token (iOS 26+), so it can tell
+    /// iOS to reload the widget the moment something changes.
+    @discardableResult
+    public static func registerPushToken(_ pushToken: Data, environment: String, store: WidgetSnapshotStore) async -> Bool {
+        guard let config = store.loadRemoteConfig() else { return false }
+        var request = URLRequest(url: config.endpoint)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 15
+        request.setValue(config.token, forHTTPHeaderField: "x-widget-token")
+        request.setValue(config.apiKey, forHTTPHeaderField: "apikey")
+        request.setValue("application/json", forHTTPHeaderField: "content-type")
+        let hex = pushToken.map { String(format: "%02x", $0) }.joined()
+        request.httpBody = try? JSONSerialization.data(withJSONObject: ["push_token": hex, "environment": environment])
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              (response as? HTTPURLResponse)?.statusCode == 200
+        else { return false }
+        // A 200 only means the snapshot was served; the server says separately
+        // whether it actually stored the push token.
+        struct Reply: Decodable { let push_registered: Bool? }
+        return (try? JSONDecoder().decode(Reply.self, from: data))?.push_registered == true
     }
 
     private static func download(_ url: URL?, with session: URLSession) async -> Data? {

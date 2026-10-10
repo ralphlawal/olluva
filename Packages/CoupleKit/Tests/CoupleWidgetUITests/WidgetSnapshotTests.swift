@@ -151,7 +151,7 @@ final class WidgetRemoteTests: XCTestCase {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("remote-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = WidgetSnapshotStore(directory: directory)
-        let outcome = await WidgetRemoteRefresher.refresh(store: store)
+        let outcome = await WidgetRemoteRefresher.refresh(store: store, source: .timeline)
         XCTAssertEqual(outcome, .notConfigured)
 
         let config = WidgetRemoteConfig(endpoint: URL(string: "https://example.test/fn")!, apiKey: "k", token: "t")

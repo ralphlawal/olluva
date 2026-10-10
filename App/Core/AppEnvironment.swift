@@ -163,6 +163,7 @@ final class AppEnvironment {
         publishWidget()
         Task {
             await widgets.configureRemoteIfNeeded(backend: backend, configuration: configuration)
+            await widgets.registerWidgetPush(environment: configuration.pushEnvironment)
             await purchases.syncWithServer()
             await notifications.refreshAuthorization()
         }

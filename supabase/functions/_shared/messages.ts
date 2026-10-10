@@ -9,6 +9,7 @@ export interface ClaimedNotification {
   category: "new_note" | "surprise" | "important_date" | "pairing" | "account" | "sync";
   payload: Record<string, unknown>;
   tokens: { token: string; environment: "sandbox" | "production" }[];
+  widget_push?: { token: string; environment: "sandbox" | "production" }[];
   sender_name: string;
   preview: string | null;
   date_title: string | null;

@@ -32,6 +32,35 @@ async function providerToken(): Promise<string> {
   return cachedToken.value;
 }
 
+/**
+ * A widget push (iOS 26+): tells iOS to reload the app's widgets now. It
+ * carries no content; the widget fetches what to show itself.
+ */
+export async function sendWidgetPush(token: string, environment: "sandbox" | "production"): Promise<PushResult> {
+  const host = environment === "production" ? "api.push.apple.com" : "api.sandbox.push.apple.com";
+  const response = await fetch(`https://${host}/3/device/${token}`, {
+    method: "POST",
+    headers: {
+      authorization: `bearer ${await providerToken()}`,
+      "apns-topic": `${requireEnv("APPLE_BUNDLE_ID")}.push-type.widgets`,
+      "apns-push-type": "widgets",
+      "apns-priority": "10",
+      "apns-expiration": String(Math.floor(Date.now() / 1000) + 3600),
+    },
+    body: JSON.stringify({ aps: { "content-changed": true } }),
+  });
+  const reason = await response.json().then((body) => body?.reason as string | undefined).catch(() => undefined);
+  if (!response.ok) {
+    // Apple's reason code (e.g. BadDeviceToken, TopicDisallowed). Not user data.
+    console.log(JSON.stringify({ event: "widget_push_rejected", status: response.status, reason: reason ?? null, environment }));
+    lastWidgetPushRejection = `${response.status}:${reason ?? "unknown"}`;
+  }
+  return resultOf(response, reason);
+}
+
+/** The most recent rejection from Apple for a widget push, for diagnostics. */
+export let lastWidgetPushRejection: string | null = null;
+
 export interface PushMessage {
   title: string;
   body: string;

@@ -384,6 +384,31 @@ describe('widget tokens', () => {
     assert.equal(await snapshot(token), null);
   });
 
+  test('a widget registers its push token, and it is handed to the push worker', async () => {
+    const { a, b, coupleId } = await db.createCouple();
+    const token = await db.call(a, 'select public.issue_widget_token()');
+    const pushToken = 'ab'.repeat(80); // 80 bytes, as iOS issues
+    const register = (t, p) => db.asService((q) => q('select public.set_widget_push_token($1, $2, $3) as ok', [t, p, 'sandbox'])).then((r) => r.rows[0].ok);
+
+    assert.equal(await register(token, pushToken.toUpperCase()), true);
+    assert.equal(await register('f'.repeat(64), pushToken), false, 'an unknown widget token registers nothing');
+    await assert.rejects(() => register(token, 'not hex!'), /widget_tokens_push_token_check/);
+    await db.rejects(a, 'select public.set_widget_push_token($1, $2, $3)', [token, pushToken, 'sandbox'], /permission denied/);
+
+    await db.query(b, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'hi')`, [coupleId, b]);
+    const claimed = (await db.asService((q) => q('select * from public.claim_notifications(50)'))).rows.find((r) => r.user_id === a);
+    assert.deepEqual(claimed.widget_push, [{ token: pushToken, environment: 'sandbox' }]);
+
+    // The same device re-registering under a newer widget token moves, not duplicates.
+    const newer = await db.call(a, 'select public.issue_widget_token()');
+    assert.equal(await register(newer, pushToken), true);
+    const { rows } = await db.admin('select count(*)::int as n from public.widget_tokens where push_token = $1', [pushToken]);
+    assert.equal(rows[0].n, 1);
+
+    await db.asService((q) => q('select public.clear_widget_push_tokens($1)', [[pushToken]]));
+    assert.equal((await db.admin('select count(*)::int as n from public.widget_tokens where push_token is not null and user_id = $1', [a])).rows[0].n, 0);
+  });
+
   test('each identity keeps at most three tokens', async () => {
     const { a } = await db.createCouple();
     const tokens = [];

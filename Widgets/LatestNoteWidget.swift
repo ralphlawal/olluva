@@ -41,7 +41,7 @@ struct NoteTimelineProvider: TimelineProvider {
         let family = context.family
         let store = store
         Task {
-            if let store { await WidgetRemoteRefresher.refresh(store: store, timeout: 8) }
+            if let store { await WidgetRemoteRefresher.refresh(store: store, source: .timeline, timeout: 8) }
             let next = Calendar.current.date(byAdding: .minute, value: 15, to: .now) ?? .now.addingTimeInterval(900)
             completion(Timeline(entries: [currentEntry(for: family)], policy: .after(next)))
         }
@@ -74,7 +74,7 @@ struct NoteTimelineProvider: TimelineProvider {
 }
 
 struct LatestNoteWidget: Widget {
-    var body: some WidgetConfiguration {
+    private var base: some WidgetConfiguration {
         StaticConfiguration(kind: "LatestNote", provider: NoteTimelineProvider()) { entry in
             LatestNoteWidgetView(entry: entry)
         }
@@ -82,6 +82,16 @@ struct LatestNoteWidget: Widget {
         .description("The newest note from your partner, right where you’ll see it.")
         .supportedFamilies([.systemSmall, .systemMedium])
         .contentMarginsDisabled()
+    }
+
+    var body: some WidgetConfiguration {
+        // iOS 26 can push updates straight to a widget. Older systems get the
+        // same widget without it and rely on notifications and the timeline.
+        if #available(iOS 26.0, *) {
+            return base.pushHandler(NotePushHandler.self)
+        } else {
+            return base
+        }
     }
 }
 
@@ -134,5 +144,32 @@ struct LockScreenNoteWidgetView: View {
         .privacySensitive()
         .containerBackground(for: .widget) { Color.clear }
         .widgetURL(entry.snapshot.deepLink)
+    }
+}
+
+// MARK: - Widget push updates (iOS 26+)
+
+/// Receives the widget's push token from iOS and hands it to the server. From
+/// then on the server can tell iOS "reload this widget now", and the timeline
+/// provider above fetches the new content. No app, no notification involved.
+@available(iOS 26.0, *)
+struct NotePushHandler: WidgetPushHandler {
+    init() {}
+
+    func pushTokenDidChange(_ pushInfo: WidgetPushInfo, widgets: [WidgetInfo]) {
+        let groupID = Bundle.main.object(forInfoDictionaryKey: "AppGroupID") as? String ?? ""
+        let environment = Bundle.main.object(forInfoDictionaryKey: "PushEnvironment") as? String ?? "development"
+        guard let store = WidgetSnapshotStore(appGroupID: groupID) else { return }
+        let token = pushInfo.token
+        // Hold the extension until the request has gone: it may be suspended
+        // as soon as this method returns.
+        let done = DispatchSemaphore(value: 0)
+        Task.detached {
+            await WidgetRemoteRefresher.registerPushToken(
+                token, environment: environment == "production" ? "production" : "sandbox", store: store
+            )
+            done.signal()
+        }
+        _ = done.wait(timeout: .now() + 12)
     }
 }
