@@ -18,6 +18,7 @@ All notable changes to this project are recorded here. Format: [Keep a Changelog
 - The product is named **Olluva**. Invitation and widget links use the `olluva://` scheme, and the app's legal and support links point at www.olluva.app.
 
 ### Deployed
+- Server functions are live, and push notifications are sent the moment a note is saved (verified: Apple accepted a notification for a real device). A once-a-minute sweep retries anything missed.
 - The database is live on the `olluva` Supabase project (eu-west-1): 11 migrations, anonymous sign-ins and manual linking on, five scheduled jobs running.
 
 ### Fixed during development

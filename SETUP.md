@@ -80,30 +80,18 @@ Then, in the dashboard:
 ```sh
 cp .env.example .env        # fill in; see comments in the file
 supabase secrets set --env-file .env
-supabase functions deploy delete-account
-supabase functions deploy verify-purchase
-supabase functions deploy app-store-notifications --no-verify-jwt
-supabase functions deploy send-push --no-verify-jwt
-supabase functions deploy purge-storage --no-verify-jwt
+for f in delete-account verify-purchase app-store-notifications send-push purge-storage; do
+  supabase functions deploy $f --use-api --no-verify-jwt
+done
 ```
-The three `--no-verify-jwt` functions are not called by users: Apple signs its notifications itself, and the two workers require the `CRON_SECRET` header.
+All five are deployed with `--no-verify-jwt`: projects using the new API keys sign user tokens asymmetrically, which the gateway's built-in check does not cover. Each function authenticates its caller itself (the user's token via Supabase Auth, Apple's signature, or the `CRON_SECRET` header).
 
-Schedule the workers (store the secret in Vault rather than in the job text):
+Tell the database where the functions live and what secret to present (run once, in the SQL editor):
 ```sql
+select vault.create_secret('https://<ref>.supabase.co', 'project_url');
 select vault.create_secret('<the CRON_SECRET value>', 'cron_secret');
-select cron.schedule('send-push', '* * * * *', $$
-  select net.http_post(
-    url := 'https://<ref>.supabase.co/functions/v1/send-push',
-    headers := jsonb_build_object('x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret'))
-  )
-$$);
-select cron.schedule('purge-storage', '10 * * * *', $$
-  select net.http_post(
-    url := 'https://<ref>.supabase.co/functions/v1/purge-storage',
-    headers := jsonb_build_object('x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret'))
-  )
-$$);
 ```
+With those two Vault entries in place, the migrations do the rest: a trigger calls `send-push` the moment a notification is queued, a sweep retries every minute, and `purge-storage` runs hourly.
 
 ## 5. Push notifications
 1. Apple Developer → Keys: create a key with **APNs**. Put its id, your team id and the `.p8` contents in `.env` (`APNS_*`).

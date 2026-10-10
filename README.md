@@ -4,7 +4,7 @@ A private iOS app for two people. Leave each other notes, drawings and photos th
 
 Native Swift and SwiftUI, WidgetKit, StoreKit 2, with a Supabase backend. iPhone, iOS 17+.
 
-> **Status: pre-release.** The database is deployed to a hosted Supabase project, and both its security rules and the app's client have been tested against it. The app runs on a device. The server functions (push, purchases, deletion) are not deployed yet, and nothing has been submitted anywhere. What is and is not verified is listed under [Known limitations](#known-limitations).
+> **Status: pre-release.** The database is deployed to a hosted Supabase project, and both its security rules and the app's client have been tested against it. The app runs on a device. The server functions are deployed and a push notification has been delivered through Apple to a real device. Purchases are not set up, and nothing has been submitted anywhere. What is and is not verified is listed under [Known limitations](#known-limitations).
 
 ## Quick start
 ```sh
@@ -49,9 +49,9 @@ These are implemented and their logic is tested locally, but they need credentia
 | Area | What is needed | What has been verified instead |
 | --- | --- | --- |
 | Running the app itself against the server on two phones | Two devices | The client library is verified against the server (below); the full app on two real phones is not |
-| Edge Functions | Deployment (Deno) | JWS verification, subscription mapping and notification text tested with Node; the HTTP handlers themselves have not been run |
-| `pg_cron` jobs | The extension enabled | The functions they call are tested; the schedules are not |
-| Push notifications | APNs key, signed build, real device | Token registration and outbox logic tested; no push has been sent |
+| `verify-purchase`, `app-store-notifications` | App Store Connect products and a sandbox purchase | Deployed; they start and reject bad input. No real transaction has been through them |
+| `delete-account`, `purge-storage` | Exercising them for real | Deployed; they start and refuse unauthorised calls. Not yet run to completion |
+| Scheduled delivery on the real server | Scheduling a note and waiting | Jobs are installed and running; a scheduled note has not been watched arriving |
 | Backup and restore with Sign in with Apple | The capability on a signed build; Apple provider and manual linking enabled in Supabase | Flow tested on the in-memory backend with a stand-in for the Apple ID; the real Apple and Supabase exchange has not run |
 | Widgets on a Home or Lock Screen | A signed build with the App Group | Snapshot store tested; widget views rendered inside the app; extension builds and embeds |
 | Purchases (StoreKit 2) | A development team for signing (then `PurchaseStoreTests` run locally); App Store Connect products and a sandbox account for the real thing | **Nothing end to end.** The purchase code compiles and the paywall's unavailable state is tested; the 7 StoreKit tests skip without a signing team |

@@ -48,7 +48,7 @@ The content is intimate. People have no account: each phone holds an anonymous i
 Supabase's CDN keeps a copy of a private file for the exact session that already downloaded it. So after unlinking, a person can keep fetching, by its unchanged URL, a photo **they had already downloaded**, until their access token expires (at most an hour). Nobody else can: a partner who had not fetched it, another couple and an unauthenticated caller are all refused, and any request that reaches Storage itself is refused. The person already had those bytes, so nothing new is exposed, but revocation of media is not instantaneous at the edge. Deleting the object (the purge worker) invalidates the cached copy.
 
 ## Not yet verified
-The Supabase Security Advisor has not been run on the project. The Edge Functions are not deployed, so purchase verification, push delivery, storage purge and account deletion have not run for real. Sign in with Apple backup and restore have not been exercised against Apple.
+The Supabase Security Advisor has not been run on the project. The Edge Functions are deployed; each starts and refuses unauthorised calls, and push delivery has run for real. Purchase verification, storage purge and account deletion have not yet been exercised end to end. Sign in with Apple backup and restore have not been exercised against Apple.
 
 ## Reporting a vulnerability
 Add a security contact before launch (placeholder: security@example.com).
