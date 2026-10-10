@@ -72,15 +72,15 @@ final class InviteCodeTests: XCTestCase {
 
     func testLinkRoundTrip() {
         let url = InviteCode.link(for: "abcde-fghjk")
-        XCTAssertEqual(url.absoluteString, "couplenotes://join?code=ABCDEFGHJK")
+        XCTAssertEqual(url.absoluteString, "olluva://join?code=ABCDEFGHJK")
         XCTAssertEqual(InviteCode.extract(from: url), "ABCDEFGHJK")
     }
 
     func testExtractRejectsForeignOrMalformedLinks() {
         XCTAssertNil(InviteCode.extract(from: URL(string: "https://example.com/join?code=ABCDEFGHJK")!))
-        XCTAssertNil(InviteCode.extract(from: URL(string: "couplenotes://note?code=ABCDEFGHJK")!))
-        XCTAssertNil(InviteCode.extract(from: URL(string: "couplenotes://join?code=short")!))
-        XCTAssertNil(InviteCode.extract(from: URL(string: "couplenotes://join")!))
+        XCTAssertNil(InviteCode.extract(from: URL(string: "olluva://note?code=ABCDEFGHJK")!))
+        XCTAssertNil(InviteCode.extract(from: URL(string: "olluva://join?code=short")!))
+        XCTAssertNil(InviteCode.extract(from: URL(string: "olluva://join")!))
     }
 }
 

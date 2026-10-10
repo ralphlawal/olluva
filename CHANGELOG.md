@@ -13,6 +13,9 @@ All notable changes to this project are recorded here. Format: [Keep a Changelog
 - **Tests**: database security suite on embedded Postgres 17, Edge Function logic tests, Swift package tests, app unit tests including StoreKit, and UI tests for the main flows.
 - **Documentation**: product spec, design system, architecture and ADRs, schema, security, testing, setup, App Store checklist.
 
+### Changed
+- The product is named **Olluva**. Invitation and widget links use the `olluva://` scheme, and the app's legal and support links point at www.olluva.app.
+
 ### Fixed during development
 - A shared media-release trigger read a column that exists on only one of its tables, breaking every note update (caught by the database tests).
 - The invitation code field rewrote its text on each keystroke and dropped characters when typed quickly (caught by UI tests).

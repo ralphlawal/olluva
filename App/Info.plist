@@ -27,7 +27,7 @@
 			<string>$(APP_BUNDLE_ID)</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>couplenotes</string>
+				<string>olluva</string>
 			</array>
 		</dict>
 	</array>

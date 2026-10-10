@@ -47,7 +47,7 @@ public enum InviteCode {
     public static let length = 10
     /// Matches the server alphabet: no 0/O or 1/I.
     public static let alphabet = Set("23456789ABCDEFGHJKLMNPQRSTUVWXYZ")
-    public static let scheme = "couplenotes"
+    public static let scheme = "olluva"
 
     /// Strips everything people add when typing or pasting a code.
     public static func normalize(_ input: String) -> String {

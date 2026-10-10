@@ -88,10 +88,10 @@ final class WidgetSnapshotTests: XCTestCase {
 
         XCTAssertEqual(DeepLink(url: DeepLink.note(id).url), .note(id))
         XCTAssertEqual(DeepLink(url: DeepLink.compose.url), .compose)
-        XCTAssertEqual(DeepLink(url: URL(string: "couplenotes://join?code=ABCDEFGHJK")!), .join(code: "ABCDEFGHJK"))
-        XCTAssertNil(DeepLink(url: URL(string: "couplenotes://note/not-a-uuid")!))
+        XCTAssertEqual(DeepLink(url: URL(string: "olluva://join?code=ABCDEFGHJK")!), .join(code: "ABCDEFGHJK"))
+        XCTAssertNil(DeepLink(url: URL(string: "olluva://note/not-a-uuid")!))
         XCTAssertNil(DeepLink(url: URL(string: "https://example.com/note/\(id)")!))
-        XCTAssertNil(DeepLink(url: URL(string: "couplenotes://unknown")!))
+        XCTAssertNil(DeepLink(url: URL(string: "olluva://unknown")!))
     }
 
     func testDownsamplingRejectsNonImages() {

@@ -59,7 +59,7 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         CFBundleURLTypes:
           - CFBundleURLName: $(APP_BUNDLE_ID)
-            CFBundleURLSchemes: [couplenotes]
+            CFBundleURLSchemes: [olluva]
         SupabaseHost: $(SUPABASE_HOST)
         SupabaseAnonKey: $(SUPABASE_ANON_KEY)
         AppGroupID: $(APP_GROUP_ID)

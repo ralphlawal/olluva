@@ -3,8 +3,7 @@
 // which is git-ignored. Copy Secrets.example.xcconfig to create it.
 
 // --- Identity (placeholders: change before any TestFlight build) -----------
-// APP_DISPLAY_NAME is a working title, not a cleared product name.
-APP_DISPLAY_NAME = Dearly
+APP_DISPLAY_NAME = Olluva
 APP_BUNDLE_ID = com.example.couplenotes
 APP_GROUP_ID = group.com.example.couplenotes
 DEVELOPMENT_TEAM =

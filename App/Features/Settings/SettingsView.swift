@@ -4,12 +4,12 @@ import PhotosUI
 import StoreKit
 import SwiftUI
 
-/// Placeholder destinations. Replace before release; see APP_STORE_CHECKLIST.md.
+/// These pages must exist on the site before release; see APP_STORE_CHECKLIST.md.
 enum AppLinks {
-    static let privacy = URL(string: "https://example.com/privacy")!
-    static let terms = URL(string: "https://example.com/terms")!
-    static let support = URL(string: "https://example.com/support")!
-    static let supportEmail = "support@example.com"
+    static let privacy = URL(string: "https://www.olluva.app/privacy")!
+    static let terms = URL(string: "https://www.olluva.app/terms")!
+    static let support = URL(string: "https://www.olluva.app/support")!
+    static let supportEmail = "support@olluva.app"
 }
 
 // Screen: Settings

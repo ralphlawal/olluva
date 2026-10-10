@@ -1,7 +1,24 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Know when a new note is waiting. What it says stays hidden unless you choose to show it." : {
 
+    },
+    "Latest note" : {
+
+    },
+    "Note on your Lock Screen" : {
+
+    },
+    "The newest note from your partner, right where you’ll see it." : {
+
+    },
+    "Thinking of you" : {
+
+    },
+    "Your person" : {
+
+    }
   },
   "version" : "1.0"
 }

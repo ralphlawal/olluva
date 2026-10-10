@@ -1,4 +1,4 @@
-# Dearly (working title)
+# Olluva
 
 A private iOS app for two people. Leave each other notes, drawings and photos that show up on each other's Home Screen.
 
@@ -69,7 +69,7 @@ These are implemented and their logic is tested locally, but they need credentia
 - Offline reading from a local database. Loaded content stays visible offline; unsent notes and drafts are kept on disk.
 
 ### Placeholders to replace before release
-Product name · bundle and App Group identifiers · product identifiers and prices · Privacy Policy, Terms and support links (`AppLinks`) · app icon (generated; needs design review) · security contact.
+Bundle and App Group identifiers (working values in `Config/Secrets.xcconfig`) · product identifiers and prices · the Privacy Policy, Terms and support pages that the app links to on www.olluva.app, and the support@olluva.app mailbox · app icon (generated; needs design review) · security contact.
 
 ### Other things to know
 - Swift language mode is 5; strict concurrency is a follow-up.

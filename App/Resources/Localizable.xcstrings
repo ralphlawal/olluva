@@ -1,7 +1,1505 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
 
+    },
+    "·" : {
+
+    },
+    "· Edited" : {
+
+    },
+    "%@ & %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ & %2$@"
+          }
+        }
+      }
+    },
+    "%@ %@ (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ (%3$@)"
+          }
+        }
+      }
+    },
+    "%@ reacted: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ reacted: %2$@"
+          }
+        }
+      }
+    },
+    "%@ saw this %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ saw this %2$@"
+          }
+        }
+      }
+    },
+    "%@ sticker" : {
+
+    },
+    "%@’s subscription covers your space. There’s nothing you need to buy." : {
+
+    },
+    "%lld" : {
+
+    },
+    "%lld characters left" : {
+
+    },
+    "%lld days before" : {
+
+    },
+    "%lld of %lld kept" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld kept"
+          }
+        }
+      }
+    },
+    "1 day before" : {
+
+    },
+    "1 month before" : {
+
+    },
+    "1 week before" : {
+
+    },
+    "2 weeks before" : {
+
+    },
+    "123456" : {
+
+    },
+    "A blank page" : {
+
+    },
+    "A date to remember" : {
+
+    },
+    "A few words (optional)" : {
+
+    },
+    "A moment to keep" : {
+
+    },
+    "A much bigger scrapbook" : {
+
+    },
+    "A new code is on its way." : {
+
+    },
+    "A note can hold up to %lld stickers." : {
+
+    },
+    "A surprise" : {
+
+    },
+    "A theme changes the look for both of you. Tap one to try it on; nothing changes for %@ until you apply it." : {
+
+    },
+    "ABCDE-FGHJK" : {
+
+    },
+    "Accent colour" : {
+
+    },
+    "Accept" : {
+
+    },
+    "Account" : {
+
+    },
+    "Add" : {
+
+    },
+    "Add %@ sticker" : {
+
+    },
+    "Add a date" : {
+
+    },
+    "Add a date you both care about" : {
+
+    },
+    "Add a moment" : {
+
+    },
+    "Add a photo" : {
+
+    },
+    "Add some words, a drawing or a photo first." : {
+
+    },
+    "Add your first date" : {
+
+    },
+    "Alex" : {
+
+    },
+    "All dates" : {
+
+    },
+    "Alongside the pen and eraser everyone has." : {
+
+    },
+    "Also block %@" : {
+
+    },
+    "Anniversaries, birthdays, the day you met. We’ll remind you both, or just you if it’s a secret." : {
+
+    },
+    "Anniversary" : {
+
+    },
+    "Anniversary, birthday, date night and more." : {
+
+    },
+    "App" : {
+
+    },
+    "Appearance" : {
+
+    },
+    "Appearance and widgets" : {
+
+    },
+    "Appearance on this phone" : {
+
+    },
+    "Applause" : {
+
+    },
+    "Applies this look" : {
+
+    },
+    "Apply to our space" : {
+
+    },
+    "Arrives %@" : {
+
+    },
+    "At least 8 characters." : {
+
+    },
+    "Automatic" : {
+
+    },
+    "Birthday" : {
+
+    },
+    "Bold" : {
+
+    },
+    "By continuing you agree to the Terms and Privacy Policy linked in Settings." : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Cancel surprise" : {
+
+    },
+    "Cancel this surprise?" : {
+
+    },
+    "Cancelled" : {
+
+    },
+    "Change password" : {
+
+    },
+    "Change photo" : {
+
+    },
+    "Check your email" : {
+
+    },
+    "Choose a different photo" : {
+
+    },
+    "Choose a new password" : {
+
+    },
+    "Choose a password" : {
+
+    },
+    "Choose a photo" : {
+
+    },
+    "Clear drawing" : {
+
+    },
+    "Close" : {
+
+    },
+    "Close and keep trying" : {
+
+    },
+    "Code" : {
+
+    },
+    "Code copied" : {
+
+    },
+    "Coming up" : {
+
+    },
+    "Confirm" : {
+
+    },
+    "Connected" : {
+
+    },
+    "Connected today" : {
+
+    },
+    "Contact us" : {
+
+    },
+    "Continue" : {
+
+    },
+    "Copies the code" : {
+
+    },
+    "Couldn’t be delivered" : {
+
+    },
+    "Covers you and your partner" : {
+
+    },
+    "Create account" : {
+
+    },
+    "Create your account. You’ll invite your partner next." : {
+
+    },
+    "Custom accent" : {
+
+    },
+    "Dark" : {
+
+    },
+    "Date" : {
+
+    },
+    "Date night" : {
+
+    },
+    "Date night?" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete account" : {
+
+    },
+    "Delete date" : {
+
+    },
+    "Delete for both of us" : {
+
+    },
+    "Delete my account" : {
+
+    },
+    "Delete this date?" : {
+
+    },
+    "Delete this note?" : {
+
+    },
+    "Delete your account" : {
+
+    },
+    "Deleting your account doesn’t cancel a subscription. Cancel it in your Apple ID settings so you aren’t charged again." : {
+
+    },
+    "Delivered" : {
+
+    },
+    "Delivered. %@ hasn’t opened it yet." : {
+
+    },
+    "Delivery time" : {
+
+    },
+    "Demo backend: nothing is saved." : {
+
+    },
+    "Demo mode. Nothing here is saved or sent anywhere." : {
+
+    },
+    "Discard" : {
+
+    },
+    "Discard this note?" : {
+
+    },
+    "Done" : {
+
+    },
+    "Draw" : {
+
+    },
+    "Draw a note" : {
+
+    },
+    "Drawing area" : {
+
+    },
+    "Dusk" : {
+
+    },
+    "Each space has exactly two members. Our servers check who is asking on every request, so nobody outside your space can read what’s in it." : {
+
+    },
+    "Earlier notes" : {
+
+    },
+    "Edit" : {
+
+    },
+    "Edit date" : {
+
+    },
+    "Edit details" : {
+
+    },
+    "Edit note" : {
+
+    },
+    "Edit surprise" : {
+
+    },
+    "Email" : {
+
+    },
+    "Enter a valid email address." : {
+
+    },
+    "Enter the code your partner sent you." : {
+
+    },
+    "Enter your email and we’ll send you a code." : {
+
+    },
+    "Enter your invitation" : {
+
+    },
+    "Eraser" : {
+
+    },
+    "Every month" : {
+
+    },
+    "Every note, drawing, photo and memory you created is deleted, including from your partner’s phone." : {
+
+    },
+    "Every paper, ink and sticker" : {
+
+    },
+    "Every year" : {
+
+    },
+    "Everything travels over an encrypted connection and is stored encrypted. Notes are not end-to-end encrypted, which is what lets them reach your widgets and arrive on a schedule." : {
+
+    },
+    "Everything you’ve written, as a file" : {
+
+    },
+    "Expires %@" : {
+
+    },
+    "Export my data" : {
+
+    },
+    "Extra widget styles" : {
+
+    },
+    "Find each other" : {
+
+    },
+    "Fine line" : {
+
+    },
+    "First met" : {
+
+    },
+    "Forgot your password?" : {
+
+    },
+    "Forty-one boxes and one confused cat" : {
+
+    },
+    "Four more looks for your shared space." : {
+
+    },
+    "Framed" : {
+
+    },
+    "Full" : {
+
+    },
+    "Get a new code" : {
+
+    },
+    "Get a new code?" : {
+
+    },
+    "Get a private code or link to send them." : {
+
+    },
+    "Get a quiet heads-up when your partner writes. You choose which kinds below." : {
+
+    },
+    "Get started" : {
+
+    },
+    "Good luck" : {
+
+    },
+    "Good luck today. You’ve got this." : {
+
+    },
+    "Good morning" : {
+
+    },
+    "Good morning, you." : {
+
+    },
+    "Good to know" : {
+
+    },
+    "Handwritten" : {
+
+    },
+    "Happy anniversary." : {
+
+    },
+    "Happy birthday!" : {
+
+    },
+    "Hello, %@" : {
+
+    },
+    "Help and support" : {
+
+    },
+    "Hide note text on the Lock Screen" : {
+
+    },
+    "Hide password" : {
+
+    },
+    "Hold on a moment." : {
+
+    },
+    "Home Screen" : {
+
+    },
+    "How %@ will see it" : {
+
+    },
+    "How to add the widget" : {
+
+    },
+    "How your notes are kept private" : {
+
+    },
+    "Hug" : {
+
+    },
+    "I already have an account" : {
+
+    },
+    "I have an invitation" : {
+
+    },
+    "I miss you." : {
+
+    },
+    "I’m sorry" : {
+
+    },
+    "I’m sorry." : {
+
+    },
+    "If there’s an account for %@, a code is on its way. Enter it with your new password." : {
+
+    },
+    "If they’ve added the widget, your note appears there. iOS decides exactly when widgets refresh, so it can take a little while." : {
+
+    },
+    "Important dates" : {
+
+    },
+    "In %lld days" : {
+
+    },
+    "Included with %@’s subscription" : {
+
+    },
+    "Ink" : {
+
+    },
+    "Ink %@" : {
+
+    },
+    "Invitation code" : {
+
+    },
+    "Invitation code %@" : {
+
+    },
+    "Invitations work once, for one person, and expire after two days." : {
+
+    },
+    "Invite my partner" : {
+
+    },
+    "iOS decides when widgets refresh, to save battery. A new note usually appears within a few minutes, and always when you open the app. Tapping the widget opens the note." : {
+
+    },
+    "It disappears from %@’s phone and widgets too. If it was saved to Memories, that copy stays." : {
+
+    },
+    "It was removed by the person who wrote it." : {
+
+    },
+    "It won’t be delivered." : {
+
+    },
+    "It’s removed from the scrapbook you share. This can’t be undone." : {
+
+    },
+    "It’s the 10-character code your partner sent you." : {
+
+    },
+    "Join me on %@" : {
+
+    },
+    "Join me on %@. Open this link, or enter the code %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Join me on %1$@. Open this link, or enter the code %2$@."
+          }
+        }
+      }
+    },
+    "Just once" : {
+
+    },
+    "Just words" : {
+
+    },
+    "Keep as draft" : {
+
+    },
+    "Keep it" : {
+
+    },
+    "Keep this" : {
+
+    },
+    "Keep up to %lld memories. Free includes %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep up to %1$lld memories. Free includes %2$lld."
+          }
+        }
+      }
+    },
+    "Kind" : {
+
+    },
+    "Know when %@ writes" : {
+
+    },
+    "Larger" : {
+
+    },
+    "Layout" : {
+
+    },
+    "Leave each other notes, drawings and photos that show up right on your Home Screen." : {
+
+    },
+    "Let’s begin" : {
+
+    },
+    "Lettering" : {
+
+    },
+    "Light" : {
+
+    },
+    "Linen" : {
+
+    },
+    "Loading" : {
+
+    },
+    "Lock Screen" : {
+
+    },
+    "Lock Screen widgets will only say that a note is waiting." : {
+
+    },
+    "Love" : {
+
+    },
+    "Make your favourite person part of your everyday." : {
+
+    },
+    "Manage subscription" : {
+
+    },
+    "Marker" : {
+
+    },
+    "Marker and pencil for drawing" : {
+
+    },
+    "Medium line" : {
+
+    },
+    "Memories" : {
+
+    },
+    "Milestone" : {
+
+    },
+    "Missing you" : {
+
+    },
+    "More" : {
+
+    },
+    "More themes, and your own accent colour" : {
+
+    },
+    "Moved" : {
+
+    },
+    "Moved in together" : {
+
+    },
+    "My account" : {
+
+    },
+    "Name" : {
+
+    },
+    "New" : {
+
+    },
+    "New notes" : {
+
+    },
+    "New password" : {
+
+    },
+    "No purchases to restore" : {
+
+    },
+    "Not connected to a server" : {
+
+    },
+    "Not now" : {
+
+    },
+    "Not sent yet" : {
+
+    },
+    "Note text" : {
+
+    },
+    "Notes can be up to %lld characters." : {
+
+    },
+    "Notes you send each other collect here." : {
+
+    },
+    "Nothing from %@ yet. Leave them something to find." : {
+
+    },
+    "Nothing here yet" : {
+
+    },
+    "Notifications" : {
+
+    },
+    "Notifications and Lock Screen widgets don’t show what a note says unless you choose to turn that on." : {
+
+    },
+    "Notifications are turned off for this app in iOS Settings." : {
+
+    },
+    "On the day" : {
+
+    },
+    "On their Home Screen" : {
+
+    },
+    "On their Lock Screen" : {
+
+    },
+    "One subscription covers you both" : {
+
+    },
+    "One subscription covers your whole space. If either of you subscribes, you both get everything." : {
+
+    },
+    "Only I can see this" : {
+
+    },
+    "Only the person who wrote this can change it." : {
+
+    },
+    "Only the photo you pick is shared. Location and other details are removed before it’s sent." : {
+
+    },
+    "Only you and your partner" : {
+
+    },
+    "Only you can see this until then" : {
+
+    },
+    "Open iOS Settings" : {
+
+    },
+    "Opens the note" : {
+
+    },
+    "Options for this surprise" : {
+
+    },
+    "Options for unsent note" : {
+
+    },
+    "Our anniversary" : {
+
+    },
+    "Pairing" : {
+
+    },
+    "Paper" : {
+
+    },
+    "Paper %@" : {
+
+    },
+    "Password" : {
+
+    },
+    "Payment is charged to your Apple ID. Subscriptions renew automatically at the price shown unless cancelled at least 24 hours before the end of the period. Manage or cancel any time in your Apple ID settings." : {
+
+    },
+    "Pen" : {
+
+    },
+    "Pencil" : {
+
+    },
+    "per %@" : {
+
+    },
+    "Personalise" : {
+
+    },
+    "Personalise your space" : {
+
+    },
+    "Photo" : {
+
+    },
+    "Photo. Drag to move, pinch to zoom." : {
+
+    },
+    "Pick a time at least a few minutes from now." : {
+
+    },
+    "Pick a time within the next two years." : {
+
+    },
+    "Plan a surprise" : {
+
+    },
+    "Plan many surprises at once" : {
+
+    },
+    "Please confirm your email first. We’ve sent you a code." : {
+
+    },
+    "Plum" : {
+
+    },
+    "Position photo" : {
+
+    },
+    "Premium" : {
+
+    },
+    "Premium keeps up to %lld" : {
+
+    },
+    "Premium, for both of you" : {
+
+    },
+    "Preview" : {
+
+    },
+    "Print" : {
+
+    },
+    "Print and Bold, as well as the two free styles." : {
+
+    },
+    "Privacy" : {
+
+    },
+    "Privacy and safety" : {
+
+    },
+    "Privacy Policy" : {
+
+    },
+    "Private to the two of you. How it works" : {
+
+    },
+    "Protected in transit and at rest" : {
+
+    },
+    "Purchases restored" : {
+
+    },
+    "Put your notes where you’ll see them" : {
+
+    },
+    "QR code for your invitation" : {
+
+    },
+    "Quiet by default" : {
+
+    },
+    "Reacted: %@" : {
+
+    },
+    "Redo" : {
+
+    },
+    "Remind us" : {
+
+    },
+    "Reminders arrive around 9 in the morning, your time." : {
+
+    },
+    "Remove" : {
+
+    },
+    "Remove for both of us" : {
+
+    },
+    "Remove photo" : {
+
+    },
+    "Remove this memory?" : {
+
+    },
+    "Repeats" : {
+
+    },
+    "Reset your password" : {
+
+    },
+    "Restore purchases" : {
+
+    },
+    "Rounded" : {
+
+    },
+    "Sage" : {
+
+    },
+    "Save" : {
+
+    },
+    "Save a note you want to keep, or write down a moment worth remembering." : {
+
+    },
+    "Save and sign in" : {
+
+    },
+    "Save changes" : {
+
+    },
+    "Save date" : {
+
+    },
+    "Save to Memories" : {
+
+    },
+    "Saved" : {
+
+    },
+    "Saved to Memories" : {
+
+    },
+    "Schedule" : {
+
+    },
+    "Scheduled" : {
+
+    },
+    "Search for %@, choose a size, and tap Add Widget." : {
+
+    },
+    "See Premium" : {
+
+    },
+    "Seen" : {
+
+    },
+    "Send" : {
+
+    },
+    "Send a new code" : {
+
+    },
+    "Send a photo" : {
+
+    },
+    "Send code" : {
+
+    },
+    "Send it later" : {
+
+    },
+    "Send later" : {
+
+    },
+    "Send now instead" : {
+
+    },
+    "Send this to your partner, and only your partner. Whoever accepts it shares your space." : {
+
+    },
+    "Sending…" : {
+
+    },
+    "Sent" : {
+
+    },
+    "Serif" : {
+
+    },
+    "Set delivery time" : {
+
+    },
+    "Settings" : {
+
+    },
+    "Share a space with %@?" : {
+
+    },
+    "Share invitation" : {
+
+    },
+    "Sharing this space since %@" : {
+
+    },
+    "Show password" : {
+
+    },
+    "Show what a note says" : {
+
+    },
+    "Sign in" : {
+
+    },
+    "Sign in with Apple isn’t available right now." : {
+
+    },
+    "Sign out" : {
+
+    },
+    "Sign out?" : {
+
+    },
+    "Six more papers, four more inks and eight more stickers." : {
+
+    },
+    "Smaller" : {
+
+    },
+    "Smile" : {
+
+    },
+    "Something else" : {
+
+    },
+    "Something went wrong. Please try again." : {
+
+    },
+    "Sparkle" : {
+
+    },
+    "Stickers" : {
+
+    },
+    "Style" : {
+
+    },
+    "Subscribe" : {
+
+    },
+    "Subscribe for %@" : {
+
+    },
+    "Subscriptions aren’t available right now. Try again later." : {
+
+    },
+    "Support" : {
+
+    },
+    "Surprise" : {
+
+    },
+    "Surprises" : {
+
+    },
+    "Surprises arriving" : {
+
+    },
+    "Surprises that haven’t arrived yet won’t be delivered." : {
+
+    },
+    "Tap Edit, then Add Widget." : {
+
+    },
+    "Tap the widget area under the clock and choose %@." : {
+
+    },
+    "Tap to add. Then drag, pinch or twist it on the note." : {
+
+    },
+    "Tell me about" : {
+
+    },
+    "Tell us what your partner calls you." : {
+
+    },
+    "Template" : {
+
+    },
+    "Templates for special occasions" : {
+
+    },
+    "Terms" : {
+
+    },
+    "Terms of Use" : {
+
+    },
+    "That code isn’t right, or it has expired." : {
+
+    },
+    "That email and password don’t match." : {
+
+    },
+    "That image couldn’t be opened." : {
+
+    },
+    "That image is too large to send." : {
+
+    },
+    "That invitation can’t be used. Ask your partner for a new one." : {
+
+    },
+    "That invitation has expired. Ask your partner for a new one." : {
+
+    },
+    "That subscription is linked to a different account." : {
+
+    },
+    "That took too long. Check your connection and try again." : {
+
+    },
+    "That’s as many as a note can hold." : {
+
+    },
+    "That’s no longer available." : {
+
+    },
+    "That’s part of Premium." : {
+
+    },
+    "That’s your own invitation. Send it to your partner." : {
+
+    },
+    "The code you’ve already shared will stop working." : {
+
+    },
+    "The note" : {
+
+    },
+    "The purchase didn’t go through. You haven’t been charged." : {
+
+    },
+    "The space closes for both of you straight away. Neither of you can open its notes or memories again." : {
+
+    },
+    "The upload didn’t finish. Try again." : {
+
+    },
+    "Their invitations will no longer work for you, and yours won’t work for them." : {
+
+    },
+    "Theme" : {
+
+    },
+    "Theme default" : {
+
+    },
+    "There’s a problem with your payment. Update it in your Apple ID settings to keep Premium." : {
+
+    },
+    "There’s already an account with that email. Try signing in." : {
+
+    },
+    "Thick line" : {
+
+    },
+    "Thinking of you" : {
+
+    },
+    "Thinking of you." : {
+
+    },
+    "This build has no backend configured. Add your Supabase host and key to Config/Secrets.xcconfig and build again." : {
+
+    },
+    "This build isn’t connected to a server yet." : {
+
+    },
+    "This can’t be undone." : {
+
+    },
+    "This closes the space you share. It’s different from deleting your account." : {
+
+    },
+    "This has already been delivered or cancelled." : {
+
+    },
+    "This is how you appear to your partner." : {
+
+    },
+    "This is the name your partner will see." : {
+
+    },
+    "This isn’t my partner" : {
+
+    },
+    "This note is gone" : {
+
+    },
+    "This permanently removes you and what you’ve made. It can’t be undone." : {
+
+    },
+    "This was changed somewhere else. We’ve loaded the latest version." : {
+
+    },
+    "Three example notes" : {
+
+    },
+    "Times are in your time zone (%@). Your partner receives it at that same moment, wherever they are." : {
+
+    },
+    "To %@" : {
+
+    },
+    "Today" : {
+
+    },
+    "Together %lld days" : {
+
+    },
+    "Tomorrow" : {
+
+    },
+    "Too many tries. Please wait a few minutes." : {
+
+    },
+    "Touch and hold an empty area of your Home Screen until the apps jiggle." : {
+
+    },
+    "Touch and hold your Lock Screen, then tap Customise." : {
+
+    },
+    "Try again" : {
+
+    },
+    "Try now" : {
+
+    },
+    "Turn left" : {
+
+    },
+    "Turn on notifications" : {
+
+    },
+    "Turn right" : {
+
+    },
+    "Type %@ to confirm" : {
+
+    },
+    "Undo" : {
+
+    },
+    "Unlink" : {
+
+    },
+    "Unlink from %@" : {
+
+    },
+    "Unlink from %@?" : {
+
+    },
+    "Up to %lld waiting at a time. Free includes %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Up to %1$lld waiting at a time. Free includes %2$lld."
+          }
+        }
+      }
+    },
+    "Update password" : {
+
+    },
+    "Us" : {
+
+    },
+    "Use at least 8 characters for your password." : {
+
+    },
+    "Useful when you’re planning something. Your partner won’t see the date or get reminders." : {
+
+    },
+    "Waiting" : {
+
+    },
+    "Waiting for your partner to accept." : {
+
+    },
+    "Waiting for your partner. This screen moves on by itself." : {
+
+    },
+    "Waiting to send" : {
+
+    },
+    "We couldn’t find a subscription to restore for this Apple ID." : {
+
+    },
+    "We couldn’t verify that purchase with Apple." : {
+
+    },
+    "We sent a 6-digit code to %@." : {
+
+    },
+    "We’ll hold this note and deliver it at the time you choose, even if your phone is off. Until then only you can see it." : {
+
+    },
+    "We’ll keep trying while the app is open." : {
+
+    },
+    "We’ll let you know about new notes, surprises and the dates you’ve saved. Nothing else. Notifications don’t show what a note says unless you turn that on." : {
+
+    },
+    "We’ll send it when you’re back online" : {
+
+    },
+    "Welcome back" : {
+
+    },
+    "What happened" : {
+
+    },
+    "What is it" : {
+
+    },
+    "What should we call you?" : {
+
+    },
+    "What the note says stays hidden there unless they’ve chosen to show it." : {
+
+    },
+    "What you wrote can still be exported for 30 days. After that the space is permanently erased." : {
+
+    },
+    "When" : {
+
+    },
+    "When this is off, a notification says who wrote to you but not what they wrote, so nothing personal shows on your Lock Screen." : {
+
+    },
+    "Widget" : {
+
+    },
+    "Widgets aren’t available in this build because its App Group isn’t set up." : {
+
+    },
+    "Words" : {
+
+    },
+    "Write a note" : {
+
+    },
+    "Write a note now and have it arrive later: on the morning of a big day, or just when they least expect it." : {
+
+    },
+    "Write back" : {
+
+    },
+    "Write something…" : {
+
+    },
+    "You" : {
+
+    },
+    "You already have a space." : {
+
+    },
+    "You already have a surprise waiting. Premium lets you plan more." : {
+
+    },
+    "You can export what you’ve written or delete your account, and what you wrote with it, at any time from Settings." : {
+
+    },
+    "You have Premium until %@. It won’t renew." : {
+
+    },
+    "You have Premium." : {
+
+    },
+    "You have Premium. It renews on %@." : {
+
+    },
+    "You were signed out. Sign in again to pick up where you left off." : {
+
+    },
+    "You’ll be able to send each other notes, and see everything in the space you share. You can leave at any time." : {
+
+    },
+    "You’ll stay signed in on this phone." : {
+
+    },
+    "You’re already connected to a partner." : {
+
+    },
+    "You’re not in a shared space yet." : {
+
+    },
+    "You’re offline. We’ll keep this safe until you’re back." : {
+
+    },
+    "You’ve been signed out. Please sign in again." : {
+
+    },
+    "You’ve reached the limit for saved dates." : {
+
+    },
+    "you@example.com" : {
+
+    },
+    "Your account stays. You can pair again, with %@ or someone else." : {
+
+    },
+    "Your account, profile and sign-in are erased." : {
+
+    },
+    "Your invitation" : {
+
+    },
+    "Your last note" : {
+
+    },
+    "Your name" : {
+
+    },
+    "Your notes are for two people." : {
+
+    },
+    "Your notes stay safe in your shared space. This phone stops receiving them until you sign in again." : {
+
+    },
+    "your partner" : {
+
+    },
+    "Your password" : {
+
+    },
+    "Your Premium" : {
+
+    },
+    "Your Premium has been restored." : {
+
+    },
+    "Your profile" : {
+
+    },
+    "Your purchase is waiting for approval. Premium unlocks as soon as it’s approved." : {
+
+    },
+    "Your purchase is waiting for approval. Premium will unlock once it’s approved." : {
+
+    },
+    "Your scrapbook is full on the free plan." : {
+
+    },
+    "Your scrapbook starts here" : {
+
+    },
+    "Your shared space closes. Your partner keeps their own account and what they wrote." : {
+
+    },
+    "Your space" : {
+
+    },
+    "Your space is for two. One of you sends an invitation and the other accepts it." : {
+
+    },
+    "Yours to take or remove" : {
+
+    }
   },
   "version" : "1.0"
 }

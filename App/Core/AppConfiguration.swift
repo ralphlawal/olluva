@@ -47,7 +47,7 @@ struct AppConfiguration {
 
         appGroupID = value("AppGroupID")
         pushEnvironment = value("PushEnvironment") == "production" ? .production : .sandbox
-        displayName = value("CFBundleDisplayName").isEmpty ? "Dearly" : value("CFBundleDisplayName")
+        displayName = value("CFBundleDisplayName").isEmpty ? "Olluva" : value("CFBundleDisplayName")
         version = value("CFBundleShortVersionString")
         build = value("CFBundleVersion")
 

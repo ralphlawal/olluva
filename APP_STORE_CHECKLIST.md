@@ -5,7 +5,7 @@ Status key: ✅ done in this repository · ⏳ needs the owner (account access, 
 Nothing here has been submitted. The app is not published or approved.
 
 ## Identity and build
-- ⏳ Final product name, checked for trademark and App Store availability (working title: "Dearly")
+- ⏳ Product name **Olluva**: confirm trademark and App Store name availability
 - ⏳ Bundle id, App Group id, team id in `Config/Secrets.xcconfig`
 - ✅ Display name, version (`0.1.0`) and build number driven from xcconfig
 - ✅ App icon, 1024×1024, no alpha (`scripts/make_app_icon.swift` regenerates it). Treat as a placeholder until a designer has reviewed it; add dark and tinted variants.
@@ -19,7 +19,7 @@ Nothing here has been submitted. The app is not published or approved.
 - ✅ App Groups (app and widget), Push Notifications, Sign in with Apple, Background Modes → Remote notifications: declared in entitlements and Info.plist
 - ⏳ The same capabilities enabled on both App IDs in the developer portal
 - ⏳ APNs key created and stored as Edge Function secrets
-- ⏳ Universal Links (optional): needs a domain and an `apple-app-site-association` file. Today invitations use the `couplenotes://` scheme.
+- ⏳ Universal Links (optional): host an `apple-app-site-association` file on www.olluva.app and add the Associated Domains capability. Today invitations use the `olluva://` scheme.
 
 ## Backend
 - ⏳ Production Supabase project created; migrations applied; `pg_cron` and `pg_net` enabled; jobs scheduled
@@ -44,7 +44,7 @@ Group display name · per product: reference name, display name (≤ 30), descri
 ## Legal and support
 - ⏳ Privacy Policy URL (required). Must cover: account data, notes/photos/drawings, device tokens, purchase records, Supabase as processor, retention (30 days after unlinking), deletion and export.
 - ⏳ Terms of Use (EULA) URL, or use Apple's standard EULA and say so in the description
-- ⏳ Support URL and contact email (`AppLinks` in `SettingsView.swift` points at example.com)
+- ⏳ Publish https://www.olluva.app/privacy, /terms and /support, and create support@olluva.app (the app already links to them)
 - ✅ In-app account deletion (Settings → Delete account), required by guideline 5.1.1(v)
 - ✅ In-app data export
 
@@ -68,7 +68,7 @@ Re-check this table whenever a dependency or an analytics tool is added. If cras
 Answer "None" to all content categories. Declare **unrestricted user-generated content: No public sharing**; the app is a private two-person space. Expected rating: 4+ (or the equivalent in the current questionnaire). Under-13 use is not targeted; state the minimum age in the Terms.
 
 ## Review notes (draft)
-> Dearly is a private space for two people. To review it you need two accounts that are paired.
+> Olluva is a private space for two people. To review it you need two accounts that are paired.
 > Demo accounts: `<reviewer-a@…>` / `<password>` and `<reviewer-b@…>` / `<password>`, already paired with sample content.
 > To see pairing from scratch: create a new account, choose "Invite my partner", then sign in on a second device with a second account and enter the code.
 > Widgets: add "Latest note" from the widget gallery. iOS schedules widget refreshes; opening the app always refreshes it.
@@ -84,7 +84,7 @@ Answer "None" to all content categories. Declare **unrestricted user-generated c
 ### Description (draft)
 > Make your favourite person part of your everyday.
 >
-> Dearly is a private space for the two of you. Leave each other notes, drawings and photos, and see them appear on each other's Home Screen.
+> Olluva is a private space for the two of you. Leave each other notes, drawings and photos, and see them appear on each other's Home Screen.
 >
 > • Write, draw or send a photo on a note that looks the way you want it to
 > • Put the latest note on your Home Screen or Lock Screen with a widget

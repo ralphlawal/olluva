@@ -1,6 +1,6 @@
 # Product specification
 
-Working title: **Dearly** (placeholder; see "Open decisions"). Category: Lifestyle. Platform: iPhone, iOS 17+.
+Name: **Olluva** · www.olluva.app. Category: Lifestyle. Platform: iPhone, iOS 17+.
 
 ## Promise
 > Make your favourite person part of your everyday.
@@ -56,7 +56,7 @@ Welcome · Privacy explainer · Create account · Sign in · Confirm email · Re
 End-to-end encryption (ADR 0007) · iPad layout · camera capture (the system photo picker is used, which needs no permission) · QR scanning inside the app (the system Camera opens the invitation link) · interactive widgets · a Notification Service Extension · more than one language.
 
 ## Open decisions for the owner
-1. **Product name.** "Dearly" is a working title set in `Config/Shared.xcconfig`. It has not been checked for trademark or App Store availability.
+1. **Product name: decided, Olluva.** Still to do: confirm trademark and App Store name availability.
 2. **Pricing** and whether to offer an introductory offer.
-3. **Bundle identifier, App Group and URL scheme** (`couplenotes://`). Universal Links need a domain.
-4. **Privacy Policy, Terms and support URLs.** Placeholders point at example.com.
+3. **Bundle identifier, App Group and URL scheme** (`olluva://`). Universal Links need a domain.
+4. **Privacy Policy, Terms and support pages.** The app links to `/privacy`, `/terms` and `/support` on www.olluva.app and to support@olluva.app. Those pages and that mailbox need to exist before release.
