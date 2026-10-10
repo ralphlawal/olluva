@@ -23,6 +23,8 @@ struct AppConfiguration {
     /// Demo only: sending fails as if the connection had dropped.
     let demoSendsFail: Bool
     let forcesDarkAppearance: Bool
+    /// UI tests suppress one-time prompts unless a test asks for one.
+    let showsBackupOffer: Bool
 
     static let current = AppConfiguration(bundle: .main, arguments: ProcessInfo.processInfo.arguments)
 
@@ -58,10 +60,12 @@ struct AppConfiguration {
         demoStartsSignedOut = arguments.contains("-startSignedOut")
         demoSendsFail = arguments.contains("-demoSendsFail")
         forcesDarkAppearance = arguments.contains("-forceDark")
+        showsBackupOffer = arguments.contains("-showBackupOffer")
         #else
         demoStartsSignedOut = false
         demoSendsFail = false
         forcesDarkAppearance = false
+        showsBackupOffer = false
         isUITesting = false
         usesDemoBackend = false
         demoScenario = ""
@@ -83,4 +87,5 @@ enum LocalPreferenceKey {
     static let hasSeenWelcome = "hasSeenWelcome"
     static let notificationPrimingShown = "notificationPrimingShown"
     static let deviceToken = "deviceToken"
+    static let backupOfferShown = "backupOfferShown"
 }

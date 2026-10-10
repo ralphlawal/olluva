@@ -15,8 +15,8 @@ With no Supabase settings, a **Debug** build runs on an in-memory demo backend a
 
 | Scenario | Starts as |
 | --- | --- |
-| `fresh` (default) | No account. A demo partner is waiting with code `SAMSAM2345`. |
-| `solo` | Signed in, not paired |
+| `fresh` (default) | First launch. A demo partner is waiting with code `SAMSAM2345`. |
+| `solo` | Started and named, not paired |
 | `empty` | Paired, nothing written |
 | `paired` | Paired, with notes, memories and dates |
 | `premium` | As `paired`, with a premium partner |
@@ -68,10 +68,11 @@ Then, in the dashboard:
    select cron.schedule('enqueue-date-reminders', '5 * * * *', 'select app_private.enqueue_date_reminders()');
    select cron.schedule('queue-orphaned-uploads', '20 3 * * *', 'select app_private.queue_orphaned_uploads()');
    select cron.schedule('purge-ended-spaces', '40 3 * * *', 'select app_private.purge_ended_spaces()');
+   select cron.schedule('purge-abandoned-identities', '0 4 * * *', 'select app_private.purge_abandoned_identities()');
    ```
-2. **Authentication → Providers → Email**: keep "Confirm email" on. Under **Email Templates**, make the *Confirm signup* and *Reset password* templates include the code, for example `Your code is {{ .Token }}`. The app asks for a 6-digit code; it does not use magic links.
-3. **Authentication → Providers → Apple**: enable, and add `APP_BUNDLE_ID` as a client id (native sign-in needs no secret).
-4. **Authentication → Rate limits** and **Attack protection**: review; consider CAPTCHA for sign-up.
+2. **Authentication → Sign In / Providers**: turn on **Allow anonymous sign-ins**. This is what "Get started" uses; without it the app cannot create an identity. Email sign-in is not used and can be turned off.
+3. **Authentication → Providers → Apple**: enable, and add `APP_BUNDLE_ID` as a client id (native sign-in needs no secret). Also enable **manual identity linking** (Authentication → Sign In / Providers → "Allow manual linking"), which backing up relies on.
+4. **Authentication → Rate limits**: review the limit on anonymous sign-ins. **Attack protection**: consider CAPTCHA for anonymous sign-ins if abuse appears (ADR 0008).
 5. **Database → Publications**: confirm `supabase_realtime` includes the tables listed in DATABASE_SCHEMA.md.
 6. Run the **Security Advisor** and resolve anything it reports.
 

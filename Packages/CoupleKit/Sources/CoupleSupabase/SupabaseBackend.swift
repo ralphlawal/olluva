@@ -53,11 +53,15 @@ final class SupabaseRepositories: Sendable {
 // MARK: - Auth
 
 extension SupabaseRepositories: AuthRepository {
+    private static func state(for session: Session) -> AuthState {
+        .signedIn(userID: session.user.id, isBackedUp: !session.user.isAnonymous)
+    }
+
     func restoreSession() async -> AuthState {
         // Reading `session` refreshes an expired token; if that is impossible
         // the stored session is unusable and the person is signed out.
         guard let session = try? await client.auth.session else { return .signedOut }
-        return .signedIn(userID: session.user.id, email: session.user.email)
+        return Self.state(for: session)
     }
 
     func stateChanges() -> AsyncStream<AuthState> {
@@ -71,7 +75,7 @@ extension SupabaseRepositories: AuthRepository {
                         continuation.yield(.signedOut)
                     default:
                         if let session = change.session {
-                            continuation.yield(.signedIn(userID: session.user.id, email: session.user.email))
+                            continuation.yield(Self.state(for: session))
                         }
                     }
                 }
@@ -81,60 +85,32 @@ extension SupabaseRepositories: AuthRepository {
         }
     }
 
-    func signUp(email: String, password: String, displayName: String) async throws -> SignUpOutcome {
-        try await run {
-            let response = try await client.auth.signUp(
-                email: email, password: password,
-                data: ["display_name": .string(InputRules.cleanedDisplayName(displayName))]
-            )
-            if case .session = response { return .signedIn }
-            return .confirmationRequired
-        }
+    /// Requires "Allow anonymous sign-ins" in the project's Auth settings.
+    /// The session is stored in the Keychain by the SDK.
+    func startAnonymously() async throws {
+        try await run { _ = try await client.auth.signInAnonymously() }
     }
 
-    func confirmSignUp(email: String, code: String) async throws {
-        try await run { _ = try await client.auth.verifyOTP(email: email, token: code, type: .signup) }
-    }
-
-    func resendConfirmation(email: String) async throws {
-        try await run { try await client.auth.resend(email: email, type: .signup) }
-    }
-
-    func signIn(email: String, password: String) async throws {
-        try await run { _ = try await client.auth.signIn(email: email, password: password) }
-    }
-
-    func signInWithApple(idToken: String, nonce: String, displayName: String?) async throws {
-        try await run {
-            let session = try await client.auth.signInWithIdToken(
+    func backUpWithApple(idToken: String, nonce: String) async throws {
+        do {
+            // Links the Apple identity to the existing anonymous user: same
+            // user id, same space, now recoverable.
+            _ = try await client.auth.linkIdentityWithIdToken(
                 credentials: OpenIDConnectCredentials(provider: .apple, idToken: idToken, nonce: nonce)
             )
-            // Apple only shares the name on the very first authorisation, and
-            // not inside the token, so it is saved here if the profile lacks one.
-            if let name = displayName.map(InputRules.cleanedDisplayName), !name.isEmpty {
-                let existing: ProfileRow? = try? await client.from("profiles").select()
-                    .eq("id", value: session.user.id).single().execute().value
-                if existing?.display_name.isEmpty ?? true {
-                    _ = try? await client.from("profiles").update(["display_name": name])
-                        .eq("id", value: session.user.id).execute()
-                }
-            }
+            // Pick up the user's new non-anonymous state straight away.
+            _ = try? await client.auth.refreshSession()
+        } catch {
+            throw SupabaseErrorMapper.map(error)
         }
     }
 
-    func requestPasswordReset(email: String) async throws {
-        try await run { try await client.auth.resetPasswordForEmail(email) }
-    }
-
-    func resetPassword(email: String, code: String, newPassword: String) async throws {
+    func restoreWithApple(idToken: String, nonce: String) async throws {
         try await run {
-            _ = try await client.auth.verifyOTP(email: email, token: code, type: .recovery)
-            _ = try await client.auth.update(user: UserAttributes(password: newPassword))
+            _ = try await client.auth.signInWithIdToken(
+                credentials: OpenIDConnectCredentials(provider: .apple, idToken: idToken, nonce: nonce)
+            )
         }
-    }
-
-    func changePassword(to newPassword: String) async throws {
-        try await run { _ = try await client.auth.update(user: UserAttributes(password: newPassword)) }
     }
 
     func signOut() async throws {

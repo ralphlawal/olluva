@@ -19,7 +19,8 @@ final class SessionStore {
 
     private(set) var phase: Phase = .launching
     private(set) var userID: UUID?
-    private(set) var email: String?
+    /// False while the identity exists only in this phone's Keychain.
+    private(set) var isBackedUp = false
     private(set) var profile: Profile?
     private(set) var space: SpaceState = .none
     private(set) var serverEntitlement: Entitlement = .free
@@ -62,8 +63,8 @@ final class SessionStore {
 
     private func apply(_ state: AuthState) async {
         switch state {
-        case .signedIn(let id, let address):
-            email = address
+        case .signedIn(let id, let backedUp):
+            isBackedUp = backedUp
             guard userID != id else { return }
             userID = id
             sessionEndedUnexpectedly = false
@@ -81,7 +82,7 @@ final class SessionStore {
 
     private func clear() {
         userID = nil
-        email = nil
+        isBackedUp = false
         profile = nil
         space = .none
         serverEntitlement = .free

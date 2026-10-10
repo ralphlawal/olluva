@@ -9,13 +9,10 @@ public enum AppError: Error, Equatable, Sendable {
     case sessionExpired
     case notConfigured
 
-    // Authentication
-    case invalidCredentials
-    case emailAlreadyRegistered
-    case emailNotConfirmed
-    case invalidCode
-    case weakPassword
+    // Identity and backup
     case appleSignInUnavailable
+    /// That Apple ID already backs up a different space.
+    case backupAlreadyInUse
 
     // Pairing
     case invitationUnavailable

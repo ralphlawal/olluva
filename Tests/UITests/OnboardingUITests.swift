@@ -1,66 +1,56 @@
 import XCTest
 
 final class OnboardingUITests: UITestCase {
-    func testWelcomeExplainsPrivacyBeforeAnyAccountExists() {
+    func testWelcomeExplainsPrivacyBeforeAnythingIsCreated() {
         let app = XCUIApplication.launched(.fresh)
         app.element("welcome.getStarted").waitToAppear()
         snapshot("01-welcome")
         app.element("welcome.privacy").tap()
-        app.staticTexts["Only you and your partner"].waitToAppear()
+        app.staticTexts["No account, no email"].waitToAppear()
         snapshot("02-privacy")
         app.buttons["Done"].tap()
     }
 
-    func testCreateAccountValidatesThenLandsOnPairing() {
+    func testGettingStartedNeedsOnlyAName() {
         let app = XCUIApplication.launched(.fresh)
         app.element("welcome.getStarted").tapWhenReady()
 
-        // Submitting an empty form explains what is missing instead of failing silently.
-        app.element("signUp.submit").tapWhenReady()
-        app.staticTexts["Enter a valid email address."].waitToAppear()
-        snapshot("03-signup-validation")
-
-        app.element("signUp.name").replaceText("Alex")
-        app.element("signUp.email").replaceText("alex@example.test")
-        // Reveal the password first: iOS treats a hidden password field on a
-        // sign-up form as a strong-password target and intercepts typed input.
-        app.buttons["Show password"].tap()
-        app.element("signUp.password").replaceText("password1")
-        snapshot("04-signup-filled")
-        app.element("signUp.submit").tap()
+        // No email, no password, no code: the next thing asked for is a name.
+        let name = app.element("name.field").waitToAppear()
+        XCTAssertFalse(app.textFields["you@example.com"].exists)
+        XCTAssertFalse(app.secureTextFields.firstMatch.exists)
+        snapshot("03-name")
+        name.typeText("Alex")
+        app.element("name.submit").tap()
 
         app.element("pairing.invite").waitToAppear()
         XCTAssertTrue(app.staticTexts["Find each other"].exists)
         snapshot("05-pairing-home")
     }
 
-    func testSignInWithWrongPasswordShowsAnErrorThenSucceeds() {
-        let app = XCUIApplication.launched(.solo, extraArguments: ["-startSignedOut"])
-        app.element("welcome.signIn").tapWhenReady()
-        app.element("signIn.email").replaceText("alex@example.test")
-        app.element("signIn.password").replaceText("not-the-password")
-        app.element("signIn.submit").tap()
-        app.staticTexts["That email and password don’t match."].waitToAppear()
-        snapshot("06-signin-error")
-
-        let password = app.element("signIn.password")
-        password.tap()
-        password.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 20) + "password1")
-        app.element("signIn.submit").tap()
-        app.element("pairing.invite").waitToAppear()
+    func testFromFirstLaunchToPairedInFourSteps() {
+        let app = XCUIApplication.launched(.fresh)
+        app.element("welcome.getStarted").tapWhenReady()
+        app.element("name.field").waitToAppear().typeText("Alex")
+        app.element("name.submit").tap()
+        app.element("pairing.join").tapWhenReady()
+        app.element("join.code").replaceText("SAMSAM2345")
+        app.element("join.continue").tap()
+        app.element("join.accept").tapWhenReady()
+        app.element("home.firstNote").waitToAppear(12)
     }
 
-    func testPasswordRecovery() {
-        let app = XCUIApplication.launched(.solo, extraArguments: ["-startSignedOut"])
-        app.element("welcome.signIn").tapWhenReady()
-        app.element("signIn.forgot").tapWhenReady()
-        app.element("reset.email").replaceText("alex@example.test")
-        app.element("reset.send").tap()
-        app.element("reset.code").replaceText("123456")
-        app.element("reset.password").replaceText("brandnewpass")
-        snapshot("07-reset-password")
-        app.element("reset.submit").tap()
-        app.element("pairing.invite").waitToAppear()
+    func testRestoringABackedUpSpaceOnANewPhone() {
+        // A space that was backed up on another phone; this one starts empty.
+        let app = XCUIApplication.launched(.paired, extraArguments: ["-startSignedOut"])
+        app.element("welcome.restore").tapWhenReady()
+        app.element("restore.demo").waitToAppear()
+        snapshot("06-restore")
+        app.element("restore.demo").tap()
+
+        // Straight back into the same space, with the same partner and notes.
+        app.element("home.latestNote").waitToAppear(12)
+        XCTAssertTrue(app.staticTexts["Sam"].exists)
     }
 }
 

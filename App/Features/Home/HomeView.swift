@@ -9,6 +9,7 @@ struct MainView: View {
     @Environment(\.palette) private var palette
     @State private var composerRequest: ComposerRequest?
     @State private var showingPriming = false
+    @State private var showingBackupOffer = false
     @State private var toast: LocalizedStringKey?
 
     var body: some View {
@@ -50,6 +51,7 @@ struct MainView: View {
         }
         .sheet(isPresented: $router.isShowingPaywall) { PaywallView() }
         .sheet(isPresented: $showingPriming) { NotificationPrimingSheet() }
+        .sheet(isPresented: $showingBackupOffer) { BackupOfferSheet() }
         .onChange(of: router.isComposing, initial: true) { _, composing in
             guard composing else { return }
             router.isComposing = false
@@ -63,6 +65,12 @@ struct MainView: View {
                !app.configuration.isUITesting {
                 try? await Task.sleep(for: .seconds(1.2))
                 showingPriming = true
+            } else if !app.session.isBackedUp, !app.settings.backupOfferShown,
+                      !app.configuration.isUITesting || app.configuration.showsBackupOffer {
+                // One prompt at a time: this waits for a launch on which the
+                // notification question is not also being asked.
+                try? await Task.sleep(for: .seconds(1.2))
+                showingBackupOffer = true
             }
         }
     }
@@ -537,5 +545,48 @@ struct NotificationPrimingSheet: View {
     private func finish() {
         app.settings.notificationPrimingShown = true
         dismiss()
+    }
+}
+
+/// Offered once, after pairing, when there is finally something to lose.
+/// Skippable, and always available afterwards in Settings.
+struct BackupOfferSheet: View {
+    @Environment(AppEnvironment.self) private var app
+    @Environment(\.palette) private var palette
+    @Environment(\.dismiss) private var dismiss
+    @State private var action = ActionState()
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Space.lg) {
+                Image(systemName: "icloud.and.arrow.up")
+                    .font(.system(size: 40, weight: .light))
+                    .foregroundStyle(palette.accent)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: Space.xs) {
+                    Text("Keep your space safe")
+                        .font(Typo.title)
+                        .foregroundStyle(palette.ink)
+                        .accessibilityAddTraits(.isHeader)
+                    Text("You’re connected with \(app.session.partner?.displayName ?? "your partner"). Since there’s no account, your space lives only on this phone for now.")
+                        .font(Typo.callout)
+                        .foregroundStyle(palette.inkSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                BackupExplanation()
+                if let error = action.error { NoticeBanner(error.message) }
+                VStack(spacing: Space.xs) {
+                    BackupButtons(action: action, onDone: { dismiss() })
+                    Button("Not now") { dismiss() }
+                        .buttonStyle(.quiet)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier("backupOffer.skip")
+                }
+            }
+            .padding(Space.gutter)
+        }
+        .pageBackground(palette)
+        .presentationDetents([.large])
+        .onDisappear { app.settings.backupOfferShown = true }
     }
 }

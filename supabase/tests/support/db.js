@@ -88,11 +88,18 @@ export async function startDatabase() {
       });
     },
 
+    /** A person who has started and chosen a name: an anonymous identity, as the app creates. */
     async createUser(name) {
       const { rows } = await pool.query(
-        `insert into auth.users (email, raw_user_meta_data) values ($1, $2) returning id`,
-        [`${name.toLowerCase()}-${Math.random().toString(36).slice(2)}@example.test`, { display_name: name }],
+        `insert into auth.users (is_anonymous, raw_user_meta_data) values (true, $1) returning id`,
+        [{ display_name: name }],
       );
+      return rows[0].id;
+    },
+
+    /** A brand-new anonymous identity, exactly as "Get started" leaves it: no name yet. */
+    async createAnonymous() {
+      const { rows } = await pool.query(`insert into auth.users (is_anonymous) values (true) returning id`);
       return rows[0].id;
     },
 

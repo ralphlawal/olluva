@@ -24,7 +24,7 @@ Nothing here has been submitted. The app is not published or approved.
 ## Backend
 - ⏳ Production Supabase project created; migrations applied; `pg_cron` and `pg_net` enabled; jobs scheduled
 - ⏳ Edge Functions deployed and secrets set (SETUP.md §4)
-- ⏳ Email templates send a 6-digit code
+- ⏳ Anonymous sign-ins and manual identity linking enabled; Apple provider configured
 - ⏳ Cross-couple access re-tested through the real API (SECURITY.md "Not yet verified")
 - ⏳ Supabase Security Advisor clean
 - ⏳ Backups and point-in-time recovery chosen for the plan
@@ -45,7 +45,8 @@ Group display name · per product: reference name, display name (≤ 30), descri
 - ⏳ Privacy Policy URL (required). Must cover: account data, notes/photos/drawings, device tokens, purchase records, Supabase as processor, retention (30 days after unlinking), deletion and export.
 - ⏳ Terms of Use (EULA) URL, or use Apple's standard EULA and say so in the description
 - ⏳ Publish https://www.olluva.app/privacy, /terms and /support, and create support@olluva.app (the app already links to them)
-- ✅ In-app account deletion (Settings → Delete account), required by guideline 5.1.1(v)
+- ✅ In-app deletion (Settings → Delete everything), required by guideline 5.1.1(v)
+- ✅ No sign-up is required to use the app; Sign in with Apple is offered only as an optional backup
 - ✅ In-app data export
 
 ## App Privacy questionnaire (based on what the code actually does)
@@ -53,9 +54,8 @@ Data is **not** used for tracking. No third-party analytics or advertising SDKs 
 
 | Data type | Collected | Linked to the user | Purpose |
 | --- | --- | --- | --- |
-| Email address | Yes | Yes | App functionality (account) |
 | Name | Yes (display name) | Yes | App functionality |
-| User ID | Yes | Yes | App functionality |
+| User ID | Yes (an internal identifier; with a backup, also Apple's user identifier) | Yes | App functionality |
 | Photos | Yes (only those a person attaches) | Yes | App functionality |
 | Other user content | Yes (notes, drawings, captions, dates) | Yes | App functionality |
 | Device ID | Yes (APNs token) | Yes | App functionality (notifications) |
@@ -69,11 +69,12 @@ Answer "None" to all content categories. Declare **unrestricted user-generated c
 
 ## Review notes (draft)
 > Olluva is a private space for two people. To review it you need two accounts that are paired.
-> Demo accounts: `<reviewer-a@…>` / `<password>` and `<reviewer-b@…>` / `<password>`, already paired with sample content.
-> To see pairing from scratch: create a new account, choose "Invite my partner", then sign in on a second device with a second account and enter the code.
+> There are no accounts or passwords. Open the app, tap Get started and enter a name.
+> To see pairing you need two devices: on the first choose "Invite my partner"; on the second tap Get started, choose "I have an invitation" and enter the code.
+> Sign in with Apple appears only under Settings → Back up your space, and under "I already have a space" on the welcome screen. It is optional.
 > Widgets: add "Latest note" from the widget gallery. iOS schedules widget refreshes; opening the app always refreshes it.
 > Premium: one subscription unlocks premium for both members of a space. The partner's access is granted by our server after it verifies the transaction with Apple.
-> Account deletion: Settings → Delete account.
+> Deleting all data: Settings → Delete everything.
 
 ## Listing
 - ⏳ Name (≤ 30), subtitle (≤ 30), keywords (≤ 100), category: Lifestyle (secondary: Social Networking)
@@ -108,5 +109,5 @@ Answer "None" to all content categories. Declare **unrestricted user-generated c
 2. Xcode → Product → Archive (Release configuration; `aps-environment` becomes `production`).
 3. Validate, then upload. Wait for processing.
 4. App Store Connect → TestFlight: add "What to test"; add internal testers. External testing needs Beta App Review and the privacy policy URL.
-5. Test on real devices, in this order: sign-up and email code → pairing with two phones → send text, drawing and photo notes → widget appears and updates → push arrives (previews off, then on) → schedule a surprise for five minutes ahead and lock both phones → sandbox purchase on one phone unlocks the other → refund in sandbox removes it → unlink → delete account.
+5. Test on real devices, in this order: Get started and name → pairing with two phones → send text, drawing and photo notes → widget appears and updates → push arrives (previews off, then on) → schedule a surprise for five minutes ahead and lock both phones → sandbox purchase on one phone unlocks the other → refund in sandbox removes it → back up with Apple, sign out, restore → unlink → delete everything.
 6. Watch Edge Function logs and the `notification_outbox` and `storage_purge_queue` tables during the test.

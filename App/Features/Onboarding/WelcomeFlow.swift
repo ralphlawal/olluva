@@ -5,8 +5,10 @@ import CryptoKit
 import SwiftUI
 
 // Screen: Welcome
-// Purpose: say what this is in one glance and get someone to an account.
-// Primary action: "Get started". Secondary: sign in.
+// Purpose: say what this is in one glance and let someone start immediately.
+// Primary action: "Get started". There is no sign-up: tapping it creates a
+// private identity on this phone and moves straight on. The only other path is
+// for someone who already has a space and is on a new phone.
 // Layouts weighed: a paged carousel (too many taps before any value), a
 // full-bleed animation (motion for its own sake), and a single composed page
 // that shows the product itself. The last one is used: the three notes at the
@@ -15,10 +17,7 @@ import SwiftUI
 
 struct WelcomeFlow: View {
     enum Route: Hashable {
-        case signUp
-        case signIn
-        case confirm(email: String)
-        case reset(email: String)
+        case restore
     }
 
     @State private var path: [Route] = []
@@ -26,14 +25,7 @@ struct WelcomeFlow: View {
     var body: some View {
         NavigationStack(path: $path) {
             WelcomeView(path: $path)
-                .navigationDestination(for: Route.self) { route in
-                    switch route {
-                    case .signUp: SignUpView(path: $path)
-                    case .signIn: SignInView(path: $path)
-                    case .confirm(let email): ConfirmEmailView(email: email)
-                    case .reset(let email): ResetPasswordView(email: email)
-                    }
-                }
+                .navigationDestination(for: Route.self) { _ in RestoreView() }
         }
     }
 }
@@ -46,6 +38,7 @@ struct WelcomeView: View {
     @Binding var path: [WelcomeFlow.Route]
     @State private var arrived = false
     @State private var showingPrivacy = false
+    @State private var action = ActionState()
 
     private static let samples: [NoteContent] = [
         NoteContent(
@@ -92,19 +85,30 @@ struct WelcomeView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.bottom, Space.lg)
 
+            if app.session.sessionEndedUnexpectedly {
+                NoticeBanner("You were signed out on this phone. If you backed up your space, you can restore it.", tone: .info)
+                    .padding(.bottom, Space.sm)
+            }
+            if let error = action.error {
+                NoticeBanner(error.message, actionTitle: error.isRetryable ? "Try again" : nil, action: start)
+                    .padding(.bottom, Space.sm)
+            }
+
             VStack(spacing: Space.xs) {
-                Button("Get started") { path.append(.signUp) }
-                    .buttonStyle(.primary)
+                Button("Get started", action: start)
+                    .buttonStyle(.primary(isLoading: action.isRunning))
+                    .disabled(action.isRunning)
                     .accessibilityIdentifier("welcome.getStarted")
-                Button("I already have an account") { path.append(.signIn) }
+                Button("I already have a space") { path.append(.restore) }
                     .buttonStyle(.quiet)
-                    .accessibilityIdentifier("welcome.signIn")
+                    .disabled(action.isRunning)
+                    .accessibilityIdentifier("welcome.restore")
             }
 
             Button {
                 showingPrivacy = true
             } label: {
-                Label("Private to the two of you. How it works", systemImage: "lock")
+                Label("No account needed. How your notes stay private", systemImage: "lock")
                     .font(Typo.caption)
                     .foregroundStyle(palette.inkSecondary)
             }
@@ -119,6 +123,12 @@ struct WelcomeView: View {
             app.settings.hasSeenWelcome = true
             withAnimation(reduceMotion ? Motion.fade : Motion.gentle.delay(0.1)) { arrived = true }
         }
+    }
+
+    /// No form, no email: a private identity is created for this phone and
+    /// kept in its Keychain. The session store picks it up and moves on.
+    private func start() {
+        action.run { try await app.backend.auth.startAnonymously() }
     }
 
     private var noteFan: some View {
@@ -146,7 +156,44 @@ struct WelcomeView: View {
     }
 }
 
-/// What "private" actually means here, in plain words, before any account exists.
+/// For someone on a new phone who backed their space up with their Apple ID.
+struct RestoreView: View {
+    @Environment(AppEnvironment.self) private var app
+    @Environment(\.palette) private var palette
+    @State private var action = ActionState()
+
+    var body: some View {
+        FormPage(
+            title: "Restore your space",
+            subtitle: "If you backed up with your Apple ID on your old phone, sign in with it here and everything comes back."
+        ) {
+            VStack(alignment: .leading, spacing: Space.md) {
+                ConsequenceRow(symbol: "checkmark.circle", text: "Your partner, notes and memories return exactly as they were.")
+                ConsequenceRow(symbol: "questionmark.circle", text: "If you never backed up, there’s nothing to restore. Go back and tap Get started, then ask your partner for a new invitation.")
+            }
+
+            if let error = action.error { NoticeBanner(error.message) }
+
+            AppleIDButton(label: .signIn, action: action) { token, nonce in
+                try await app.backend.auth.restoreWithApple(idToken: token, nonce: nonce)
+            }
+            .disabled(action.isRunning)
+
+            #if DEBUG
+            if app.demo != nil {
+                Button("Demo: restore the backed-up space") {
+                    action.run { try await app.backend.auth.restoreWithApple(idToken: DemoController.appleID, nonce: "demo") }
+                }
+                .buttonStyle(.quiet)
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("restore.demo")
+            }
+            #endif
+        }
+    }
+}
+
+/// What "private" actually means here, in plain words, before anything is created.
 struct PrivacyExplainerSheet: View {
     @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
@@ -159,9 +206,19 @@ struct PrivacyExplainerSheet: View {
                         .font(Typo.title)
                         .foregroundStyle(palette.ink)
                     PrivacyPoint(
+                        symbol: "person.crop.circle.badge.checkmark",
+                        title: "No account, no email",
+                        detail: "You don’t sign up. Your phone holds a private key to your space. We never ask for your email, phone number or contacts."
+                    )
+                    PrivacyPoint(
                         symbol: "person.2",
                         title: "Only you and your partner",
                         detail: "Each space has exactly two members. Our servers check who is asking on every request, so nobody outside your space can read what’s in it."
+                    )
+                    PrivacyPoint(
+                        symbol: "icloud.and.arrow.up",
+                        title: "Back up if you want to",
+                        detail: "Because there’s no account, losing this phone would mean losing your space. You can attach your Apple ID as a backup so you can restore it on a new phone."
                     )
                     PrivacyPoint(
                         symbol: "lock.rectangle",
@@ -176,7 +233,7 @@ struct PrivacyExplainerSheet: View {
                     PrivacyPoint(
                         symbol: "trash",
                         title: "Yours to take or remove",
-                        detail: "You can export what you’ve written or delete your account, and what you wrote with it, at any time from Settings."
+                        detail: "You can export what you’ve written or delete everything, at any time, from Settings."
                     )
                 }
                 .padding(Space.gutter)
@@ -256,358 +313,22 @@ struct FormPage<Content: View>: View {
     }
 }
 
-struct PasswordField: View {
-    @Environment(\.palette) private var palette
-    let prompt: LocalizedStringKey
-    @Binding var text: String
-    var isNew = false
-    var identifier = ""
-    @State private var isRevealed = false
-
-    /// The simulator's strong-password sheet swallows automated typing.
-    private static let isUITesting = ProcessInfo.processInfo.arguments.contains("-uiTesting")
-
-    var body: some View {
-        HStack {
-            Group {
-                if isRevealed {
-                    TextField(prompt, text: $text)
-                } else {
-                    SecureField(prompt, text: $text)
-                }
-            }
-            .textContentType(isNew && !Self.isUITesting ? .newPassword : .password)
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
-            .accessibilityIdentifier(identifier)
-            Button {
-                isRevealed.toggle()
-            } label: {
-                Image(systemName: isRevealed ? "eye.slash" : "eye")
-                    .foregroundStyle(palette.inkSecondary)
-                    .frame(width: Size.touch, height: Size.touch)
-            }
-            .accessibilityLabel(isRevealed ? Text("Hide password") : Text("Show password"))
-        }
-    }
-}
-
-// MARK: - Sign up
-
-struct SignUpView: View {
-    private enum Field { case name, email, password }
-
-    @Environment(AppEnvironment.self) private var app
-    @Environment(\.palette) private var palette
-    @Binding var path: [WelcomeFlow.Route]
-    @State private var name = ""
-    @State private var email = ""
-    @State private var password = ""
-    @State private var action = ActionState()
-    @State private var attempted = false
-    @FocusState private var focus: Field?
-
-    private var nameValid: Bool { InputRules.isValidDisplayName(name) }
-    private var emailValid: Bool { InputRules.isValidEmail(email) }
-    private var passwordValid: Bool { InputRules.isAcceptablePassword(password) }
-
-    var body: some View {
-        FormPage(title: "Let’s begin", subtitle: "Create your account. You’ll invite your partner next.") {
-            VStack(spacing: Space.lg) {
-                LabeledField(
-                    "Your name", message: attempted && !nameValid ? "Tell us what your partner calls you." : nil,
-                    isError: attempted && !nameValid
-                ) {
-                    TextField("Alex", text: $name)
-                        .textContentType(.givenName)
-                        .submitLabel(.next)
-                        .focused($focus, equals: .name)
-                        .onSubmit { focus = .email }
-                        .accessibilityIdentifier("signUp.name")
-                }
-                LabeledField(
-                    "Email", message: attempted && !emailValid ? "Enter a valid email address." : nil,
-                    isError: attempted && !emailValid
-                ) {
-                    TextField("you@example.com", text: $email)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.next)
-                        .focused($focus, equals: .email)
-                        .onSubmit { focus = .password }
-                        .accessibilityIdentifier("signUp.email")
-                }
-                LabeledField(
-                    "Password", message: "At least 8 characters.", isError: attempted && !passwordValid
-                ) {
-                    PasswordField(prompt: "Choose a password", text: $password, isNew: true, identifier: "signUp.password")
-                        .submitLabel(.go)
-                        .focused($focus, equals: .password)
-                        .onSubmit(submit)
-                }
-            }
-            .disabled(action.isRunning)
-
-            if let error = action.error {
-                NoticeBanner(error.message)
-            }
-
-            VStack(spacing: Space.md) {
-                Button("Create account", action: submit)
-                    .buttonStyle(.primary(isLoading: action.isRunning))
-                    .disabled(action.isRunning)
-                    .accessibilityIdentifier("signUp.submit")
-                if !app.backend.isDemo {
-                    AppleSignInButton(action: action)
-                }
-                Text("By continuing you agree to the Terms and Privacy Policy linked in Settings.")
-                    .font(Typo.caption)
-                    .foregroundStyle(palette.inkSecondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .onAppear { focus = .name }
-    }
-
-    private func submit() {
-        attempted = true
-        guard nameValid, emailValid, passwordValid else {
-            focus = !nameValid ? .name : !emailValid ? .email : .password
-            return
-        }
-        focus = nil
-        let address = email.trimmingCharacters(in: .whitespaces)
-        action.run {
-            let outcome = try await app.backend.auth.signUp(email: address, password: password, displayName: name)
-            if outcome == .confirmationRequired {
-                path.append(.confirm(email: address))
-            }
-        }
-    }
-}
-
-// MARK: - Sign in
-
-struct SignInView: View {
-    private enum Field { case email, password }
-
-    @Environment(AppEnvironment.self) private var app
-    @Environment(\.palette) private var palette
-    @Binding var path: [WelcomeFlow.Route]
-    @State private var email = ""
-    @State private var password = ""
-    @State private var action = ActionState()
-    @FocusState private var focus: Field?
-
-    var body: some View {
-        FormPage(title: "Welcome back", subtitle: nil) {
-            if app.session.sessionEndedUnexpectedly {
-                NoticeBanner("You were signed out. Sign in again to pick up where you left off.", tone: .info)
-            }
-            VStack(spacing: Space.lg) {
-                LabeledField("Email") {
-                    TextField("you@example.com", text: $email)
-                        .textContentType(.username)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.next)
-                        .focused($focus, equals: .email)
-                        .onSubmit { focus = .password }
-                        .accessibilityIdentifier("signIn.email")
-                }
-                LabeledField("Password") {
-                    PasswordField(prompt: "Your password", text: $password, identifier: "signIn.password")
-                        .submitLabel(.go)
-                        .focused($focus, equals: .password)
-                        .onSubmit(submit)
-                }
-            }
-            .disabled(action.isRunning)
-
-            if let error = action.error {
-                NoticeBanner(error.message)
-            }
-
-            VStack(spacing: Space.md) {
-                Button("Sign in", action: submit)
-                    .buttonStyle(.primary(isLoading: action.isRunning))
-                    .disabled(action.isRunning || email.isEmpty || password.isEmpty)
-                    .accessibilityIdentifier("signIn.submit")
-                if !app.backend.isDemo {
-                    AppleSignInButton(action: action)
-                }
-                Button("Forgot your password?") {
-                    path.append(.reset(email: email.trimmingCharacters(in: .whitespaces)))
-                }
-                .buttonStyle(.quiet)
-                .accessibilityIdentifier("signIn.forgot")
-            }
-        }
-        .onAppear { focus = .email }
-    }
-
-    private func submit() {
-        guard !email.isEmpty, !password.isEmpty else { return }
-        focus = nil
-        let address = email.trimmingCharacters(in: .whitespaces)
-        action.run {
-            do {
-                try await app.backend.auth.signIn(email: address, password: password)
-            } catch AppError.emailNotConfirmed {
-                try? await app.backend.auth.resendConfirmation(email: address)
-                path.append(.confirm(email: address))
-            }
-        }
-    }
-}
-
-// MARK: - Email confirmation
-
-struct ConfirmEmailView: View {
-    @Environment(AppEnvironment.self) private var app
-    let email: String
-    @State private var code = ""
-    @State private var action = ActionState()
-    @State private var resent = false
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        FormPage(title: "Check your email", subtitle: "We sent a 6-digit code to \(email).") {
-            LabeledField("Code") {
-                TextField("123456", text: $code)
-                    .keyboardType(.numberPad)
-                    .textContentType(.oneTimeCode)
-                    .font(Typo.code)
-                    .focused($focused)
-                    .onChange(of: code) { _, value in
-                        code = String(value.filter(\.isNumber).prefix(6))
-                    }
-                    .accessibilityIdentifier("confirm.code")
-            }
-            .disabled(action.isRunning)
-
-            if let error = action.error {
-                NoticeBanner(error.message)
-            } else if resent {
-                NoticeBanner("A new code is on its way.", tone: .success)
-            }
-
-            VStack(spacing: Space.xs) {
-                Button("Confirm") {
-                    focused = false
-                    action.run { try await app.backend.auth.confirmSignUp(email: email, code: code) }
-                }
-                .buttonStyle(.primary(isLoading: action.isRunning))
-                .disabled(code.count < 6 || action.isRunning)
-                .accessibilityIdentifier("confirm.submit")
-
-                Button("Send a new code") {
-                    action.run({ try await app.backend.auth.resendConfirmation(email: email) }, onSuccess: { resent = true })
-                }
-                .buttonStyle(.quiet)
-                .disabled(action.isRunning)
-            }
-        }
-        .onAppear { focused = true }
-    }
-}
-
-// MARK: - Password recovery
-
-struct ResetPasswordView: View {
-    private enum Step { case request, complete }
-
-    @Environment(AppEnvironment.self) private var app
-    @State var email: String
-    @State private var step = Step.request
-    @State private var code = ""
-    @State private var password = ""
-    @State private var action = ActionState()
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        FormPage(
-            title: "Reset your password",
-            subtitle: step == .request
-                ? "Enter your email and we’ll send you a code."
-                : "If there’s an account for \(email), a code is on its way. Enter it with your new password."
-        ) {
-            VStack(spacing: Space.lg) {
-                if step == .request {
-                    LabeledField("Email") {
-                        TextField("you@example.com", text: $email)
-                            .textContentType(.username)
-                            .keyboardType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .focused($focused)
-                            .accessibilityIdentifier("reset.email")
-                    }
-                } else {
-                    LabeledField("Code") {
-                        TextField("123456", text: $code)
-                            .keyboardType(.numberPad)
-                            .textContentType(.oneTimeCode)
-                            .font(Typo.code)
-                            .focused($focused)
-                            .onChange(of: code) { _, value in
-                                code = String(value.filter(\.isNumber).prefix(6))
-                            }
-                            .accessibilityIdentifier("reset.code")
-                    }
-                    LabeledField("New password", message: "At least 8 characters.") {
-                        PasswordField(prompt: "Choose a new password", text: $password, isNew: true, identifier: "reset.password")
-                    }
-                }
-            }
-            .disabled(action.isRunning)
-
-            if let error = action.error {
-                NoticeBanner(error.message)
-            }
-
-            if step == .request {
-                Button("Send code") {
-                    action.run({ try await app.backend.auth.requestPasswordReset(email: email) }, onSuccess: {
-                        step = .complete
-                        focused = true
-                    })
-                }
-                .buttonStyle(.primary(isLoading: action.isRunning))
-                .disabled(!InputRules.isValidEmail(email) || action.isRunning)
-                .accessibilityIdentifier("reset.send")
-            } else {
-                Button("Save and sign in") {
-                    focused = false
-                    action.run { try await app.backend.auth.resetPassword(email: email, code: code, newPassword: password) }
-                }
-                .buttonStyle(.primary(isLoading: action.isRunning))
-                .disabled(code.count < 6 || !InputRules.isAcceptablePassword(password) || action.isRunning)
-                .accessibilityIdentifier("reset.submit")
-            }
-        }
-        .onAppear { focused = true }
-    }
-}
-
 // MARK: - Sign in with Apple
 
-/// Apple's own button, wired to Supabase's ID-token sign-in. A random nonce is
-/// sent to Apple hashed and to the server in the clear, which ties the token
-/// Apple returns to this one request.
-struct AppleSignInButton: View {
-    @Environment(AppEnvironment.self) private var app
+/// Apple's own button. Used only to back a space up and to restore one; it
+/// requests no name and no email. A random nonce is sent to Apple hashed and
+/// to the server in the clear, which ties the token to this one request.
+struct AppleIDButton: View {
     @Environment(\.colorScheme) private var scheme
+    let label: SignInWithAppleButton.Label
     let action: ActionState
+    let onToken: (_ idToken: String, _ nonce: String) async throws -> Void
     @State private var nonce = ""
 
     var body: some View {
-        SignInWithAppleButton(.continue) { request in
+        SignInWithAppleButton(label) { request in
             nonce = Self.randomNonce()
-            request.requestedScopes = [.fullName, .email]
+            request.requestedScopes = []
             request.nonce = SHA256.hash(data: Data(nonce.utf8)).map { String(format: "%02x", $0) }.joined()
         } onCompletion: { result in
             switch result {
@@ -619,10 +340,8 @@ struct AppleSignInButton: View {
                     action.error = .appleSignInUnavailable
                     return
                 }
-                let name = credential.fullName.flatMap { PersonNameComponentsFormatter().string(from: $0) }
-                action.run {
-                    try await app.backend.auth.signInWithApple(idToken: token, nonce: nonce, displayName: name)
-                }
+                let usedNonce = nonce
+                action.run { try await onToken(token, usedNonce) }
             case .failure(let error):
                 // Dismissing the sheet is a choice, not a failure.
                 if (error as? ASAuthorizationError)?.code != .canceled {

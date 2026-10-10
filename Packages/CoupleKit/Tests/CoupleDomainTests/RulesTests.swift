@@ -30,25 +30,11 @@ final class InputRulesTests: XCTestCase {
         XCTAssertThrowsError(try InputRules.validate(NoteContent(body: "x", style: NoteStyle(stickers: stickers))))
     }
 
-    func testEmailValidation() {
-        for good in ["a@b.co", "first.last+tag@example.com", "  padded@example.org  "] {
-            XCTAssertTrue(InputRules.isValidEmail(good), good)
-        }
-        for bad in ["", "plain", "@example.com", "a@b", "a@.com", "a b@example.com", "a@b..com", "a@@b.com"] {
-            XCTAssertFalse(InputRules.isValidEmail(bad), bad)
-        }
-    }
-
     func testDisplayNameCleaning() {
         XCTAssertEqual(InputRules.cleanedDisplayName("  Ada  "), "Ada")
         XCTAssertEqual(InputRules.cleanedDisplayName(String(repeating: "x", count: 60)).count, 40)
         XCTAssertFalse(InputRules.isValidDisplayName("   "))
         XCTAssertTrue(InputRules.isValidDisplayName("Ada"))
-    }
-
-    func testPasswordRule() {
-        XCTAssertFalse(InputRules.isAcceptablePassword("short"))
-        XCTAssertTrue(InputRules.isAcceptablePassword("longenough"))
     }
 }
 

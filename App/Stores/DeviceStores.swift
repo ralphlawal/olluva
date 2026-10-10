@@ -46,6 +46,11 @@ final class LocalSettings {
         didSet { defaults.set(notificationPrimingShown, forKey: LocalPreferenceKey.notificationPrimingShown) }
     }
 
+    /// The one-time suggestion to back the space up has been shown.
+    var backupOfferShown: Bool {
+        didSet { defaults.set(backupOfferShown, forKey: LocalPreferenceKey.backupOfferShown) }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         widgetStyle = defaults.string(forKey: LocalPreferenceKey.widgetStyle).flatMap(WidgetStyle.init) ?? .note
@@ -53,11 +58,13 @@ final class LocalSettings {
         appearance = defaults.string(forKey: LocalPreferenceKey.appearance).flatMap(Appearance.init) ?? .system
         hasSeenWelcome = defaults.bool(forKey: LocalPreferenceKey.hasSeenWelcome)
         notificationPrimingShown = defaults.bool(forKey: LocalPreferenceKey.notificationPrimingShown)
+        backupOfferShown = defaults.bool(forKey: LocalPreferenceKey.backupOfferShown)
     }
 
     /// Clears what is tied to an account; keeps device-level choices.
     func resetForSignOut() {
         notificationPrimingShown = false
+        backupOfferShown = false
     }
 }
 

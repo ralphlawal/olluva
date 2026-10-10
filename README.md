@@ -1,6 +1,6 @@
 # Olluva
 
-A private iOS app for two people. Leave each other notes, drawings and photos that show up on each other's Home Screen.
+A private iOS app for two people. Leave each other notes, drawings and photos that show up on each other's Home Screen. No account needed.
 
 Native Swift and SwiftUI, WidgetKit, StoreKit 2, with a Supabase backend. iPhone, iOS 17+.
 
@@ -54,8 +54,8 @@ These are implemented and their logic is tested locally, but they need credentia
 | Edge Functions | Deployment (Deno) | JWS verification, subscription mapping and notification text tested with Node; the HTTP handlers themselves have not been run |
 | `pg_cron` jobs | The extension enabled | The functions they call are tested; the schedules are not |
 | Push notifications | APNs key, signed build, real device | Token registration and outbox logic tested; no push has been sent |
-| Sign in with Apple | Capability on a signed build | Not exercised |
-| Email confirmation and reset codes | Supabase email templates | Flow tested on the in-memory backend |
+| Starting without sign-up (anonymous identity) | Anonymous sign-ins enabled in a Supabase project | Flow tested on the in-memory backend; database rules tested with anonymous users |
+| Backup and restore with Sign in with Apple | The capability on a signed build; Apple provider and manual linking enabled in Supabase | Flow tested on the in-memory backend with a stand-in for the Apple ID; the real Apple and Supabase exchange has not run |
 | Widgets on a Home or Lock Screen | A signed build with the App Group | Snapshot store tested; widget views rendered inside the app; extension builds and embeds |
 | Purchases (StoreKit 2) | A development team for signing (then `PurchaseStoreTests` run locally); App Store Connect products and a sandbox account for the real thing | **Nothing end to end.** The purchase code compiles and the paywall's unavailable state is tested; the 7 StoreKit tests skip without a signing team |
 | Partner unlocking from a purchase | Deployed `verify-purchase` | Database entitlement rules tested |
@@ -65,6 +65,7 @@ These are implemented and their logic is tested locally, but they need credentia
 - A Notification Service Extension (would make widget refresh on push more reliable).
 - Camera capture and in-app QR scanning. The system photo picker and Camera app cover both.
 - iPad layout, interactive widgets, languages other than English (strings are localisable).
+- CAPTCHA or App Attest on identity creation (see ADR 0008).
 - Analytics and crash reporting. Diagnostics are local `os.Logger` output only.
 - Offline reading from a local database. Loaded content stays visible offline; unsent notes and drafts are kept on disk.
 

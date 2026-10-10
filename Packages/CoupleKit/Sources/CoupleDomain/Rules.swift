@@ -18,19 +18,6 @@ public enum InputRules {
         }
     }
 
-    public static func isValidEmail(_ email: String) -> Bool {
-        let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count <= 254, !trimmed.contains(" ") else { return false }
-        let parts = trimmed.split(separator: "@", omittingEmptySubsequences: false)
-        guard parts.count == 2, !parts[0].isEmpty else { return false }
-        let domain = parts[1].split(separator: ".", omittingEmptySubsequences: false)
-        return domain.count >= 2 && domain.allSatisfy { !$0.isEmpty } && (domain.last?.count ?? 0) >= 2
-    }
-
-    public static func isAcceptablePassword(_ password: String) -> Bool {
-        password.count >= Validation.minimumPasswordLength
-    }
-
     public static func cleanedDisplayName(_ name: String) -> String {
         String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Validation.displayNameLimit))
     }

@@ -15,10 +15,11 @@ final class LocalBackendTests: XCTestCase {
         world = LocalWorld(now: { clock.now })
     }
 
+    /// A new person: an anonymous identity, then a name. No sign-up.
     private func session(_ name: String) async throws -> (LocalBackend, UUID) {
         let backend = LocalBackend(world: world)
-        let outcome = try await backend.signUp(email: "\(name.lowercased())@example.test", password: "password1", displayName: name)
-        XCTAssertEqual(outcome, .signedIn)
+        try await backend.startAnonymously()
+        _ = try await backend.updateProfile(displayName: name, timeZone: nil)
         return (backend, try XCTUnwrap(backend.currentUserID))
     }
 
@@ -42,65 +43,86 @@ final class LocalBackendTests: XCTestCase {
         }
     }
 
-    // MARK: Authentication
+    // MARK: Identity without sign-up
 
-    func testSignUpSignOutSignIn() async throws {
-        let (backend, id) = try await session("Ada")
+    func testStartingNeedsNothingFromThePerson() async throws {
+        let backend = LocalBackend(world: world)
+        let before = await backend.restoreSession()
+        XCTAssertEqual(before, .signedOut)
+
+        try await backend.startAnonymously()
+        let id = try XCTUnwrap(backend.currentUserID)
+        let state = await backend.restoreSession()
+        XCTAssertEqual(state, .signedIn(userID: id, isBackedUp: false))
         let profile = try await backend.myProfile()
-        XCTAssertEqual(profile.displayName, "Ada")
+        XCTAssertEqual(profile.displayName, "", "the app asks for a name next")
+    }
+
+    func testEachStartIsADifferentIdentity() async throws {
+        let (_, first) = try await session("Ada")
+        let (_, second) = try await session("Ben")
+        XCTAssertNotEqual(first, second)
+    }
+
+    func testBackingUpKeepsTheSameIdentityAndSpace() async throws {
+        let s = try await pairedSessions()
+        try await s.a.backUpWithApple(idToken: "apple-ada", nonce: "n")
+        let state = await s.a.restoreSession()
+        XCTAssertEqual(state, .signedIn(userID: s.aID, isBackedUp: true))
+        let space = try await s.a.spaceState()
+        XCTAssertEqual(space.partner?.id, s.bID)
+    }
+
+    func testRestoringOnANewPhoneReturnsTheSameSpace() async throws {
+        let s = try await pairedSessions()
+        _ = try await s.a.send(id: UUID(), coupleID: s.couple, content: NoteContent(body: "before the new phone"))
+        try await s.a.backUpWithApple(idToken: "apple-ada", nonce: "n")
+
+        let newPhone = LocalBackend(world: world)
+        try await newPhone.restoreWithApple(idToken: "apple-ada", nonce: "n2")
+        XCTAssertEqual(newPhone.currentUserID, s.aID)
+        let notes = try await newPhone.recentNotes(coupleID: s.couple, before: nil, limit: 5)
+        XCTAssertEqual(notes.map(\.body), ["before the new phone"])
+    }
+
+    func testAnAppleIDCanBackUpOnlyOneIdentity() async throws {
+        let (a, _) = try await session("Ada")
+        let (b, bID) = try await session("Ben")
+        try await a.backUpWithApple(idToken: "apple-shared", nonce: "n")
+        await assertThrows(.backupAlreadyInUse) { try await b.backUpWithApple(idToken: "apple-shared", nonce: "n") }
+        let state = await b.restoreSession()
+        XCTAssertEqual(state, .signedIn(userID: bID, isBackedUp: false))
+        // Backing up again with the same Apple ID is harmless.
+        try await a.backUpWithApple(idToken: "apple-shared", nonce: "n")
+    }
+
+    func testRestoringWithAnUnknownAppleIDStartsFresh() async throws {
+        let backend = LocalBackend(world: world)
+        try await backend.restoreWithApple(idToken: "apple-never-seen", nonce: "n")
+        let id = try XCTUnwrap(backend.currentUserID)
+        let state = await backend.restoreSession()
+        XCTAssertEqual(state, .signedIn(userID: id, isBackedUp: true))
+        let space = try await backend.spaceState()
+        XCTAssertEqual(space, .none)
+    }
+
+    func testSignedOutCallsAreRefused() async throws {
+        let (backend, _) = try await session("Ada")
         try await backend.signOut()
         XCTAssertNil(backend.currentUserID)
         await assertThrows(.sessionExpired) { _ = try await backend.myProfile() }
-        await assertThrows(.invalidCredentials) { try await backend.signIn(email: "ada@example.test", password: "wrong-password") }
-        try await backend.signIn(email: "ADA@example.test", password: "password1")
-        XCTAssertEqual(backend.currentUserID, id)
+        await assertThrows(.sessionExpired) { try await backend.backUpWithApple(idToken: "x", nonce: "n") }
     }
 
-    func testDuplicateEmailAndWeakPasswordAreRejected() async throws {
-        _ = try await session("Ada")
-        let other = LocalBackend(world: world)
-        await assertThrows(.emailAlreadyRegistered) {
-            _ = try await other.signUp(email: "ada@example.test", password: "password1", displayName: "Imposter")
-        }
-        await assertThrows(.weakPassword) {
-            _ = try await other.signUp(email: "new@example.test", password: "short", displayName: "New")
-        }
-    }
-
-    func testEmailConfirmationFlow() async throws {
-        let strict = LocalWorld(requiresEmailConfirmation: true)
-        let backend = LocalBackend(world: strict)
-        let outcome = try await backend.signUp(email: "ada@example.test", password: "password1", displayName: "Ada")
-        XCTAssertEqual(outcome, .confirmationRequired)
-        XCTAssertNil(backend.currentUserID)
-        await assertThrows(.emailNotConfirmed) { try await backend.signIn(email: "ada@example.test", password: "password1") }
-        await assertThrows(.invalidCode) { try await backend.confirmSignUp(email: "ada@example.test", code: "000000") }
-        try await backend.confirmSignUp(email: "ada@example.test", code: LocalWorld.verificationCode)
-        XCTAssertNotNil(backend.currentUserID)
-    }
-
-    func testPasswordRecovery() async throws {
-        let (backend, id) = try await session("Ada")
-        try await backend.signOut()
-        try await backend.requestPasswordReset(email: "ada@example.test")
-        try await backend.requestPasswordReset(email: "nobody@example.test") // does not reveal existence
-        await assertThrows(.invalidCode) { try await backend.resetPassword(email: "ada@example.test", code: "999999", newPassword: "newpassword") }
-        try await backend.resetPassword(email: "ada@example.test", code: LocalWorld.verificationCode, newPassword: "newpassword")
-        XCTAssertEqual(backend.currentUserID, id)
-        try await backend.signOut()
-        await assertThrows(.invalidCredentials) { try await backend.signIn(email: "ada@example.test", password: "password1") }
-        try await backend.signIn(email: "ada@example.test", password: "newpassword")
-    }
-
-    func testAuthStateStreamReportsExpiry() async throws {
+    func testAuthStateStreamReportsExpiryAndBackup() async throws {
         let (backend, id) = try await session("Ada")
         var iterator = backend.stateChanges().makeAsyncIterator()
+        try await backend.backUpWithApple(idToken: "apple-ada", nonce: "n")
+        let backedUp = await iterator.next()
+        XCTAssertEqual(backedUp, .signedIn(userID: id, isBackedUp: true))
         backend.expireSession()
-        let first = await iterator.next()
-        XCTAssertEqual(first, .signedOut)
-        try await backend.signIn(email: "ada@example.test", password: "password1")
-        let second = await iterator.next()
-        XCTAssertEqual(second?.userID, id)
+        let expired = await iterator.next()
+        XCTAssertEqual(expired, .signedOut)
     }
 
     // MARK: Pairing
@@ -502,7 +524,6 @@ final class LocalBackendTests: XCTestCase {
         let partnerState = try await s.b.spaceState()
         XCTAssertEqual(partnerState, .none)
         XCTAssertTrue(world.hasAccount(s.bID))
-        await assertThrows(.invalidCredentials) { try await s.a.signIn(email: "ada@example.test", password: "password1") }
     }
 
     func testExportContainsOnlyTheUsersOwnWriting() async throws {
@@ -550,9 +571,9 @@ final class TestClock: @unchecked Sendable {
 final class DemoArrangementTests: XCTestCase {
     func testAWaitingSpaceWithAKnownCodeCanBeJoined() async throws {
         let world = LocalWorld()
-        let sam = world.addAccount(name: "Sam", email: "sam@example.test")
+        let sam = world.addAccount(name: "Sam")
         world.addWaitingSpace(owner: sam, invitationCode: "SAMSAM2345")
-        let alex = world.addAccount(name: "Alex", email: "alex@example.test")
+        let alex = world.addAccount(name: "Alex")
         let backend = LocalBackend(world: world, signedInAs: alex)
 
         let preview = try await backend.previewInvitation(code: "samsa-m2345")
@@ -564,8 +585,8 @@ final class DemoArrangementTests: XCTestCase {
 
     func testSendFailureLeavesReadsWorking() async throws {
         let world = LocalWorld()
-        let a = world.addAccount(name: "A", email: "a@example.test")
-        let b = world.addAccount(name: "B", email: "b@example.test")
+        let a = world.addAccount(name: "A")
+        let b = world.addAccount(name: "B")
         let couple = world.pair(a, b)
         let backend = LocalBackend(world: world, signedInAs: a)
         world.setSendFailure(.offline)

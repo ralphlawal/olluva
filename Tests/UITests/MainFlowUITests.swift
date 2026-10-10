@@ -291,32 +291,50 @@ final class SettingsUITests: UITestCase {
         XCTAssertTrue(app.staticTexts["Find each other"].exists, "still signed in, just no longer paired")
     }
 
-    func testDeletingTheAccountRequiresTypedConfirmationAndSignsOut() {
+    func testDeletingEverythingRequiresTypedConfirmationAndReturnsToTheStart() {
         let app = XCUIApplication.launched(.paired)
         openSettings(app)
         scrollTo(app.element("settings.delete"), in: app).tap()
         let submit = app.element("delete.submit").waitToAppear()
         XCTAssertFalse(submit.isEnabled)
-        snapshot("58-delete-account")
+        snapshot("58-delete-everything")
         app.element("delete.confirmField").replaceText("DELETE")
         XCTAssertTrue(submit.isEnabled)
         submit.tap()
-
         app.element("welcome.getStarted").waitToAppear(12)
-        // The account is really gone: its credentials no longer work.
-        app.element("welcome.signIn").tap()
-        app.element("signIn.email").replaceText("alex@example.test")
-        app.element("signIn.password").replaceText("password1")
-        app.element("signIn.submit").tap()
-        app.staticTexts["That email and password don’t match."].waitToAppear()
     }
 
-    func testSignOut() {
+    func testWithoutABackupThereIsNoSignOutAndBackingUpAddsIt() {
         let app = XCUIApplication.launched(.paired)
         openSettings(app)
+        let backup = scrollTo(app.element("settings.backup"), in: app)
+        // Signing out with no backup would strand the space, so it isn't offered.
+        XCTAssertFalse(app.element("settings.signOut").exists)
+        snapshot("59-settings-not-backed-up")
+
+        backup.tap()
+        app.element("backup.demo").waitToAppear()
+        snapshot("59a-backup")
+        app.element("backup.demo").tap()
+        app.element("backup.done").waitToAppear()
+        app.navigationBars.buttons.firstMatch.tap()
+
         scrollTo(app.element("settings.signOut"), in: app).tap()
         app.buttons["Sign out"].firstMatch.tapWhenReady()
         app.element("welcome.getStarted").waitToAppear(12)
+
+        // And the backup works: restoring returns to the same space.
+        app.element("welcome.restore").tap()
+        app.element("restore.demo").tapWhenReady()
+        app.element("home.latestNote").waitToAppear(12)
+    }
+
+    func testTheBackupOfferAppearsOnceAndCanBeSkipped() {
+        let app = XCUIApplication.launched(.paired, extraArguments: ["-showBackupOffer"])
+        app.element("backupOffer.skip").waitToAppear(12)
+        snapshot("59b-backup-offer")
+        app.element("backupOffer.skip").tap()
+        app.element("home.compose").waitToAppear()
     }
 
     func testDarkAppearance() {

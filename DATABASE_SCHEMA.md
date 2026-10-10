@@ -6,7 +6,7 @@ Postgres (Supabase). Migrations live in `supabase/migrations`, applied in filena
 
 | Table | Purpose | Who can read | Who can write |
 | --- | --- | --- | --- |
-| `profiles` | Display name, avatar path, time zone. 1:1 with `auth.users`. | Self; current partner | Self: `display_name`, `avatar_path`, `time_zone` only |
+| `profiles` | Display name, avatar path, time zone. 1:1 with `auth.users` (anonymous identities included). | Self; current partner | Self: `display_name`, `avatar_path`, `time_zone` only |
 | `themes` | Catalogue of space themes and which are premium | Any signed-in user | Nobody (seeded) |
 | `couple_spaces` | A shared space: status, theme, accent | Its active members | Functions only |
 | `couple_members` | Membership, with `left_at` | Active members of the same space | Functions only |
@@ -51,6 +51,7 @@ The three redemption functions return `{ ok, error }` instead of raising, so tha
 | `enqueue-date-reminders` | hourly at :05 | Queues reminders due at 09:00 local |
 | `queue-orphaned-uploads` | 03:20 daily | Queues uploads older than a day that nothing references |
 | `purge-ended-spaces` | 03:40 daily | Erases spaces ended more than 30 days ago; trims logs |
+| `purge-abandoned-identities` | 04:00 daily | Removes anonymous identities over 30 days old that never chose a name, never joined a space and hold no subscription |
 | `send-push`, `purge-storage` | every minute / hourly | Created from SETUP.md (they need the project URL and a secret) |
 
 ## Storage
@@ -67,7 +68,8 @@ The three redemption functions return `{ ok, error }` instead of raising, so tha
 | An ended space | 30 days after it ended |
 | Invitation attempts, sent notifications | 7 days |
 | Audit events | 180 days |
-| An account and what it authored | Until the account is deleted |
+| An identity and what it authored | Until the person deletes everything |
+| An identity abandoned before doing anything | 30 days |
 
 ## Realtime
 Published: `notes`, `note_reactions`, `couple_spaces`, `couple_members`, `memories`, `important_dates`, `invitations`. Realtime applies the same SELECT policies before delivering a change.

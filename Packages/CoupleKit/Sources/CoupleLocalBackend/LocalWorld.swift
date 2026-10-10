@@ -12,10 +12,8 @@ import Foundation
 public final class LocalWorld: @unchecked Sendable {
     struct Account {
         var id: UUID
-        var email: String
-        var password: String?
-        var confirmed: Bool
-        var pendingCode: String?
+        /// The Apple ID that backs this identity up, if any.
+        var appleSubject: String?
     }
 
     struct Couple {
@@ -66,20 +64,14 @@ public final class LocalWorld: @unchecked Sendable {
     private var _failure: AppError?
     private var _sendFailure: AppError?
 
-    /// The code accepted for email confirmation and password reset.
-    public static let verificationCode = "123456"
-
     /// Artificial delay applied to every call, so loading states are visible
     /// in demo mode. Zero in tests.
     public let latency: Duration
-    public let requiresEmailConfirmation: Bool
 
     public init(
-        latency: Duration = .zero, requiresEmailConfirmation: Bool = false,
-        now: @escaping @Sendable () -> Date = { Date() }
+        latency: Duration = .zero, now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.latency = latency
-        self.requiresEmailConfirmation = requiresEmailConfirmation
         _now = now
     }
 
@@ -161,12 +153,13 @@ public final class LocalWorld: @unchecked Sendable {
 
     // MARK: - Arranging state (tests, previews, demo mode)
 
-    /// Creates a confirmed account and returns its id.
+    /// Creates an identity and returns its id. Pass `appleID` for one that
+    /// has been backed up.
     @discardableResult
-    public func addAccount(name: String, email: String, password: String = "password1") -> UUID {
+    public func addAccount(name: String, appleID: String? = nil) -> UUID {
         arrange { state, _ in
             let id = UUID()
-            state.accounts[id] = Account(id: id, email: email.lowercased(), password: password, confirmed: true)
+            state.accounts[id] = Account(id: id, appleSubject: appleID)
             state.profiles[id] = Profile(id: id, displayName: name)
             state.preferences[id] = NotificationPreferences()
             return id

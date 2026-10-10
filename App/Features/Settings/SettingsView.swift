@@ -45,7 +45,8 @@ struct SettingsView: View {
                             ProfileAvatar(profile: app.session.profile, size: 52)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(app.session.profile?.displayName ?? "").font(Typo.bodyStrong)
-                                Text(app.session.email ?? "").font(Typo.caption).foregroundStyle(palette.inkSecondary)
+                                Text(app.session.isBackedUp ? "Backed up with your Apple ID" : "Only on this phone")
+                                    .font(Typo.caption).foregroundStyle(palette.inkSecondary)
                             }
                         }
                         .padding(.vertical, Space.xxs)
@@ -101,17 +102,28 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Account") {
-                    if !app.backend.isDemo || app.configuration.isUITesting {
-                        NavigationLink { ChangePasswordView() } label: { row("key", "Change password") }
-                            .accessibilityIdentifier("settings.password")
+                Section {
+                    NavigationLink { BackupView() } label: {
+                        row(
+                            app.session.isBackedUp ? "checkmark.icloud" : "icloud.and.arrow.up",
+                            app.session.isBackedUp ? "Backed up" : "Back up your space",
+                            detail: app.session.isBackedUp
+                                ? "You can restore it on a new phone with your Apple ID"
+                                : "Without a backup, losing this phone means losing your space"
+                        )
                     }
-                    Button { confirmingSignOut = true } label: { row("rectangle.portrait.and.arrow.right", "Sign out") }
-                        .accessibilityIdentifier("settings.signOut")
+                    .accessibilityIdentifier("settings.backup")
+                    // Signing out is only offered once there is a way back in.
+                    if app.session.isBackedUp {
+                        Button { confirmingSignOut = true } label: { row("rectangle.portrait.and.arrow.right", "Sign out of this phone") }
+                            .accessibilityIdentifier("settings.signOut")
+                    }
                     NavigationLink { DeleteAccountView() } label: {
-                        row("trash", "Delete account").foregroundStyle(palette.danger)
+                        row("trash", "Delete everything").foregroundStyle(palette.danger)
                     }
                     .accessibilityIdentifier("settings.delete")
+                } header: {
+                    Text("Your space on this phone")
                 }
 
                 Section {
@@ -160,7 +172,7 @@ struct SettingsView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("Your notes stay safe in your shared space. This phone stops receiving them until you sign in again.")
+                Text("Your notes stay safe in your shared space. To come back, choose “I already have a space” and sign in with your Apple ID.")
             }
         }
     }
@@ -254,12 +266,6 @@ struct ProfileEditView: View {
                     .accessibilityIdentifier("profile.name")
             }
 
-            LabeledField("Email") {
-                Text(app.session.email ?? "")
-                    .foregroundStyle(palette.inkSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
             if let error = action.error { NoticeBanner(error.message) }
 
             Button("Save", action: save)
@@ -297,25 +303,66 @@ struct ProfileEditView: View {
     }
 }
 
-struct ChangePasswordView: View {
+/// Attaches an Apple ID to the space, so it can be restored on another phone.
+struct BackupView: View {
     @Environment(AppEnvironment.self) private var app
-    @Environment(\.dismiss) private var dismiss
-    @State private var password = ""
+    @Environment(\.palette) private var palette
     @State private var action = ActionState()
 
     var body: some View {
-        FormPage(title: "Change password", subtitle: "You’ll stay signed in on this phone.") {
-            LabeledField("New password", message: "At least 8 characters.") {
-                PasswordField(prompt: "Choose a new password", text: $password, isNew: true, identifier: "password.new")
+        FormPage(
+            title: app.session.isBackedUp ? "Your space is backed up" : "Back up your space",
+            subtitle: app.session.isBackedUp
+                ? "If you change or lose this phone, install the app, choose “I already have a space” and sign in with your Apple ID."
+                : "There’s no account, so right now your space exists only on this phone."
+        ) {
+            if app.session.isBackedUp {
+                NoticeBanner("Backed up with your Apple ID.", tone: .success)
+                    .accessibilityIdentifier("backup.done")
+            } else {
+                BackupExplanation()
+                if let error = action.error { NoticeBanner(error.message) }
+                BackupButtons(action: action)
             }
-            if let error = action.error { NoticeBanner(error.message) }
-            Button("Update password") {
-                action.run({ try await app.backend.auth.changePassword(to: password) }, onSuccess: { dismiss() })
-            }
-            .buttonStyle(.primary(isLoading: action.isRunning))
-            .disabled(!InputRules.isAcceptablePassword(password) || action.isRunning)
-            .accessibilityIdentifier("password.save")
         }
+    }
+}
+
+struct BackupExplanation: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.md) {
+            ConsequenceRow(symbol: "iphone.slash", text: "If this phone is lost, reset or replaced, your space can’t be recovered without a backup.")
+            ConsequenceRow(symbol: "apple.logo", text: "Backing up links your space to your Apple ID. That’s all: we don’t ask Apple for your name or email.")
+            ConsequenceRow(symbol: "arrow.triangle.2.circlepath", text: "On a new phone, sign in with the same Apple ID and everything comes back.")
+        }
+    }
+}
+
+struct BackupButtons: View {
+    @Environment(AppEnvironment.self) private var app
+    let action: ActionState
+    var onDone: (() -> Void)?
+
+    var body: some View {
+        AppleIDButton(label: .continue, action: action) { token, nonce in
+            try await app.backend.auth.backUpWithApple(idToken: token, nonce: nonce)
+            Haptics.success()
+            onDone?()
+        }
+        .disabled(action.isRunning)
+
+        #if DEBUG
+        if app.demo != nil {
+            Button("Demo: back up with a pretend Apple ID") {
+                action.run({
+                    try await app.backend.auth.backUpWithApple(idToken: DemoController.appleID, nonce: "demo")
+                }, onSuccess: { onDone?() })
+            }
+            .buttonStyle(.quiet)
+            .frame(maxWidth: .infinity)
+            .accessibilityIdentifier("backup.demo")
+        }
+        #endif
     }
 }
 
@@ -431,12 +478,12 @@ struct UnlinkView: View {
 
     var body: some View {
         let name = app.session.partner?.displayName ?? String(localized: "your partner")
-        FormPage(title: "Unlink from \(name)", subtitle: "This closes the space you share. It’s different from deleting your account.") {
+        FormPage(title: "Unlink from \(name)", subtitle: "This closes the space you share. It’s different from deleting everything.") {
             VStack(alignment: .leading, spacing: Space.md) {
                 ConsequenceRow(symbol: "xmark.circle", text: "The space closes for both of you straight away. Neither of you can open its notes or memories again.")
                 ConsequenceRow(symbol: "gift", text: "Surprises that haven’t arrived yet won’t be delivered.")
                 ConsequenceRow(symbol: "clock", text: "What you wrote can still be exported for 30 days. After that the space is permanently erased.")
-                ConsequenceRow(symbol: "person", text: "Your account stays. You can pair again, with \(name) or someone else.")
+                ConsequenceRow(symbol: "person", text: "You stay set up on this phone, and can pair again with \(name) or someone else.")
             }
 
             Toggle(isOn: $blockPartner) {
@@ -496,9 +543,9 @@ struct DeleteAccountView: View {
     private let word = "DELETE"
 
     var body: some View {
-        FormPage(title: "Delete your account", subtitle: "This permanently removes you and what you’ve made. It can’t be undone.") {
+        FormPage(title: "Delete everything", subtitle: "This permanently removes you and what you’ve made, from this phone and from our servers. It can’t be undone.") {
             VStack(alignment: .leading, spacing: Space.md) {
-                ConsequenceRow(symbol: "person.crop.circle.badge.xmark", text: "Your account, profile and sign-in are erased.")
+                ConsequenceRow(symbol: "person.crop.circle.badge.xmark", text: "Your profile, and any backup, are erased.")
                 ConsequenceRow(symbol: "note.text", text: "Every note, drawing, photo and memory you created is deleted, including from your partner’s phone.")
                 if app.session.phase == .paired {
                     ConsequenceRow(symbol: "person.2.slash", text: "Your shared space closes. Your partner keeps their own account and what they wrote.")
@@ -517,7 +564,7 @@ struct DeleteAccountView: View {
 
             if let error = action.error { NoticeBanner(error.message) }
 
-            Button("Delete my account") {
+            Button("Delete everything") {
                 action.run { try await app.deleteAccount() }
             }
             .buttonStyle(.primary(isLoading: action.isRunning))

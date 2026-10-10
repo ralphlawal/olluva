@@ -9,15 +9,11 @@ extension AppError {
         switch self {
         case .offline: "You’re offline. We’ll keep this safe until you’re back."
         case .timedOut: "That took too long. Check your connection and try again."
-        case .sessionExpired: "You’ve been signed out. Please sign in again."
+        case .sessionExpired: "This phone is no longer connected to your space."
         case .notConfigured: "This build isn’t connected to a server yet."
 
-        case .invalidCredentials: "That email and password don’t match."
-        case .emailAlreadyRegistered: "There’s already an account with that email. Try signing in."
-        case .emailNotConfirmed: "Please confirm your email first. We’ve sent you a code."
-        case .invalidCode: "That code isn’t right, or it has expired."
-        case .weakPassword: "Use at least 8 characters for your password."
         case .appleSignInUnavailable: "Sign in with Apple isn’t available right now."
+        case .backupAlreadyInUse: "That Apple ID already backs up a different space. To use it here, restore that space instead."
 
         case .invitationUnavailable: "That invitation can’t be used. Ask your partner for a new one."
         case .invitationExpired: "That invitation has expired. Ask your partner for a new one."

@@ -19,8 +19,8 @@ struct Fixture {
     let outboxDirectory: URL
 
     init() {
-        me = world.addAccount(name: "Alex", email: "alex@example.test")
-        partner = world.addAccount(name: "Sam", email: "sam@example.test")
+        me = world.addAccount(name: "Alex")
+        partner = world.addAccount(name: "Sam")
         couple = world.pair(me, partner)
         local = LocalBackend(world: world, signedInAs: me)
         partnerBackend = LocalBackend(world: world, signedInAs: partner)
@@ -208,9 +208,9 @@ final class NotesStoreTests: XCTestCase {
 
 @MainActor
 final class SessionStoreTests: XCTestCase {
-    func testPhasesFollowTheAccountThroughItsLifecycle() async throws {
+    func testPhasesFollowAPersonFromFirstLaunchToPaired() async throws {
         let world = LocalWorld()
-        let partner = world.addAccount(name: "Sam", email: "sam@example.test")
+        let partner = world.addAccount(name: "Sam")
         world.addWaitingSpace(owner: partner, invitationCode: "SAMSAM2345")
         let local = LocalBackend(world: world)
         let session = SessionStore(backend: local.makeBackend())
@@ -220,9 +220,13 @@ final class SessionStoreTests: XCTestCase {
         await session.start(isMissingBackend: false)
         XCTAssertEqual(session.phase, .signedOut)
 
-        _ = try await local.signUp(email: "alex@example.test", password: "password1", displayName: "Alex")
+        // "Get started": no form, no email.
+        try await local.startAnonymously()
         try await waitFor { session.phase == .unpaired }
-        XCTAssertEqual(session.profile?.displayName, "Alex")
+        XCTAssertFalse(session.isBackedUp)
+        XCTAssertTrue(session.needsDisplayName, "the only thing asked for is a name")
+
+        session.setProfile(try await local.updateProfile(displayName: "Alex", timeZone: nil))
         XCTAssertFalse(session.needsDisplayName)
 
         try await local.acceptInvitation(code: "SAMSAM2345")
@@ -234,7 +238,7 @@ final class SessionStoreTests: XCTestCase {
         XCTAssertEqual(session.phase, .unpaired)
         XCTAssertNil(session.partner)
 
-        // The server ends the session: the person is told why they are signed out.
+        // The server ends the session: the person is told why.
         local.expireSession()
         try await waitFor { session.phase == .signedOut }
         XCTAssertTrue(session.sessionEndedUnexpectedly)
@@ -242,12 +246,44 @@ final class SessionStoreTests: XCTestCase {
         XCTAssertEqual(signedOutCalls, 1)
     }
 
+    func testBackingUpIsReflectedWithoutChangingIdentityOrSpace() async throws {
+        let fixture = Fixture()
+        defer { fixture.cleanUp() }
+        let session = SessionStore(backend: fixture.backend)
+        await session.start(isMissingBackend: false)
+        XCTAssertEqual(session.phase, .paired)
+        XCTAssertFalse(session.isBackedUp)
+
+        try await fixture.local.backUpWithApple(idToken: "apple-alex", nonce: "n")
+        try await waitFor { session.isBackedUp }
+        XCTAssertEqual(session.userID, fixture.me)
+        XCTAssertEqual(session.phase, .paired)
+    }
+
+    func testRestoringOnANewPhoneLandsBackInTheSameSpace() async throws {
+        let fixture = Fixture()
+        defer { fixture.cleanUp() }
+        try await fixture.local.backUpWithApple(idToken: "apple-alex", nonce: "n")
+
+        let newPhone = LocalBackend(world: fixture.world)
+        let session = SessionStore(backend: newPhone.makeBackend())
+        await session.start(isMissingBackend: false)
+        XCTAssertEqual(session.phase, .signedOut)
+
+        try await newPhone.restoreWithApple(idToken: "apple-alex", nonce: "n2")
+        try await waitFor { session.phase == .paired }
+        XCTAssertEqual(session.userID, fixture.me)
+        XCTAssertEqual(session.partner?.id, fixture.partner)
+        XCTAssertTrue(session.isBackedUp)
+    }
+
     func testADeliberateSignOutIsNotReportedAsUnexpected() async throws {
         let world = LocalWorld()
-        let me = world.addAccount(name: "Alex", email: "alex@example.test")
+        let me = world.addAccount(name: "Alex", appleID: "apple-alex")
         let session = SessionStore(backend: LocalBackend(world: world, signedInAs: me).makeBackend())
         await session.start(isMissingBackend: false)
         XCTAssertEqual(session.phase, .unpaired)
+        XCTAssertTrue(session.isBackedUp)
         try await session.signOut()
         XCTAssertEqual(session.phase, .signedOut)
         XCTAssertFalse(session.sessionEndedUnexpectedly)
@@ -255,7 +291,7 @@ final class SessionStoreTests: XCTestCase {
 
     func testAFailedFirstLoadIsShownAndCanBeRetried() async throws {
         let world = LocalWorld()
-        let me = world.addAccount(name: "Alex", email: "alex@example.test")
+        let me = world.addAccount(name: "Alex")
         let session = SessionStore(backend: LocalBackend(world: world, signedInAs: me).makeBackend())
         world.setFailure(.offline)
         await session.start(isMissingBackend: false)
@@ -271,9 +307,9 @@ final class SessionStoreTests: XCTestCase {
         XCTAssertEqual(session.phase, .notConfigured)
     }
 
-    func testAnAccountWithNoNameIsAskedForOne() async {
+    func testAnIdentityWithNoNameIsAskedForOne() async {
         let world = LocalWorld()
-        let me = world.addAccount(name: "", email: "apple@example.test")
+        let me = world.addAccount(name: "")
         let session = SessionStore(backend: LocalBackend(world: world, signedInAs: me).makeBackend())
         await session.start(isMissingBackend: false)
         XCTAssertTrue(session.needsDisplayName)

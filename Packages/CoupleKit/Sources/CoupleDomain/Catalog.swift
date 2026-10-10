@@ -38,7 +38,6 @@ public enum Validation {
     public static let memoryTitleLimit = 80
     public static let memoryCaptionLimit = 300
     public static let dateTitleLimit = 60
-    public static let minimumPasswordLength = 8
     public static let maximumStickers = 8
 }
 

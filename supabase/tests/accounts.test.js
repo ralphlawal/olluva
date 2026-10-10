@@ -251,3 +251,57 @@ describe('export and deletion', () => {
     await db.rejects(a, 'delete from public.profiles', [], /permission denied/);
   });
 });
+
+describe('identity without sign-up', () => {
+  test('an anonymous identity starts with an empty name and can do everything a member can', async () => {
+    const ada = await db.createAnonymous();
+    const [profile] = await db.query(ada, 'select display_name from public.profiles');
+    assert.equal(profile.display_name, '');
+
+    await db.query(ada, `update public.profiles set display_name = 'Ada' where id = $1`, [ada]);
+    await db.call(ada, 'select public.create_couple_space()');
+    const invite = await db.call(ada, 'select public.create_invitation()');
+
+    const ben = await db.createAnonymous();
+    const preview = await db.call(ben, 'select public.preview_invitation($1)', [invite.code]);
+    assert.equal(preview.inviter_name, 'Ada');
+    assert.equal((await db.call(ben, 'select public.accept_invitation($1)', [invite.code])).ok, true);
+  });
+
+  test('an anonymous identity gets no access beyond its own space', async () => {
+    const { a, coupleId } = await db.createCouple();
+    await db.query(a, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'ours')`, [coupleId, a]);
+    const stranger = await db.createAnonymous();
+    assert.deepEqual(await db.query(stranger, 'select id from public.notes'), []);
+    assert.deepEqual(await db.query(stranger, 'select id from public.couple_spaces'), []);
+    assert.equal((await db.query(stranger, 'select id from public.profiles')).length, 1, 'only its own profile');
+    await db.rejects(
+      stranger, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'x')`, [coupleId, stranger],
+      /row-level security/,
+    );
+  });
+
+  test('only identities abandoned before doing anything are purged', async () => {
+    const old = `now() - interval '45 days'`;
+    const abandoned = await db.createAnonymous();
+    const named = await db.createUser('Named');
+    const recent = await db.createAnonymous();
+    const inSpace = await db.createAnonymous();
+    await db.call(inSpace, 'select public.create_couple_space()');
+    const subscriber = await db.createAnonymous();
+    await db.makePremium(subscriber);
+    const backedUp = await db.createAnonymous();
+    await db.admin('update auth.users set is_anonymous = false where id = $1', [backedUp]);
+    await db.admin(`update auth.users set created_at = ${old} where id = any($1)`, [[abandoned, named, inSpace, subscriber, backedUp]]);
+
+    await db.admin('select app_private.purge_abandoned_identities()');
+    const { rows } = await db.admin('select id from auth.users where id = any($1)', [[abandoned, named, recent, inSpace, subscriber, backedUp]]);
+    const left = new Set(rows.map((r) => r.id));
+    assert.equal(left.has(abandoned), false, 'old, unnamed, never in a space: removed');
+    for (const [label, id] of Object.entries({ named, recent, inSpace, subscriber, backedUp })) {
+      assert.equal(left.has(id), true, `${label} must be kept`);
+    }
+    assert.equal((await db.admin('select 1 from public.profiles where id = $1', [abandoned])).rows.length, 0);
+    await db.rejects(named, 'select app_private.purge_abandoned_identities()', [], /permission denied/);
+  });
+});

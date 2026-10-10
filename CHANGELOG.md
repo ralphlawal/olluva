@@ -14,6 +14,7 @@ All notable changes to this project are recorded here. Format: [Keep a Changelog
 - **Documentation**: product spec, design system, architecture and ADRs, schema, security, testing, setup, App Store checklist.
 
 ### Changed
+- **No sign-up.** "Get started" creates a private identity on the phone; the only thing asked for is a name. Email, password, confirmation codes and password reset are removed. A space can be backed up with Sign in with Apple (offered once after pairing, and in Settings) and restored on a new phone. Sign-out is offered only once backed up. "Delete account" is now "Delete everything". Abandoned identities are purged after 30 days. See ADR 0008.
 - The product is named **Olluva**. Invitation and widget links use the `olluva://` scheme, and the app's legal and support links point at www.olluva.app.
 
 ### Fixed during development

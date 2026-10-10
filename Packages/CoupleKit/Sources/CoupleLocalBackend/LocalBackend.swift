@@ -41,8 +41,8 @@ public final class LocalBackend: @unchecked Sendable {
 
     private func authStateLocked() -> AuthState {
         guard let id = sessionUser else { return .signedOut }
-        let email = try? world.read { state, _ in state.accounts[id]?.email }
-        return .signedIn(userID: id, email: email ?? nil)
+        let backedUp = (try? world.read { state, _ in state.accounts[id]?.appleSubject != nil }) ?? false
+        return .signedIn(userID: id, isBackedUp: backedUp)
     }
 
     private func user() throws -> UUID {
@@ -73,98 +73,46 @@ extension LocalBackend: AuthRepository {
         }
     }
 
-    public func signUp(email: String, password: String, displayName: String) async throws -> SignUpOutcome {
+    public func startAnonymously() async throws {
         await pause()
-        guard InputRules.isAcceptablePassword(password) else { throw AppError.weakPassword }
-        let address = email.lowercased().trimmingCharacters(in: .whitespaces)
-        let needsConfirmation = world.requiresEmailConfirmation
         let id: UUID = try world.mutate { state, _ in
-            if state.accounts.values.contains(where: { $0.email == address }) {
-                throw AppError.emailAlreadyRegistered
-            }
             let id = UUID()
-            state.accounts[id] = LocalWorld.Account(
-                id: id, email: address, password: password, confirmed: !needsConfirmation,
-                pendingCode: needsConfirmation ? LocalWorld.verificationCode : nil
-            )
-            state.profiles[id] = Profile(id: id, displayName: InputRules.cleanedDisplayName(displayName), timeZone: TimeZone.current.identifier)
+            state.accounts[id] = LocalWorld.Account(id: id, appleSubject: nil)
+            // No name yet: the app asks for one before pairing.
+            state.profiles[id] = Profile(id: id, displayName: "", timeZone: TimeZone.current.identifier)
             state.preferences[id] = NotificationPreferences()
             return id
         }
-        if needsConfirmation { return .confirmationRequired }
-        setSession(id)
-        return .signedIn
-    }
-
-    public func confirmSignUp(email: String, code: String) async throws {
-        await pause()
-        let address = email.lowercased()
-        let id: UUID = try world.mutate { state, _ in
-            guard let account = state.accounts.values.first(where: { $0.email == address }),
-                  account.pendingCode == code
-            else { throw AppError.invalidCode }
-            state.accounts[account.id]?.confirmed = true
-            state.accounts[account.id]?.pendingCode = nil
-            return account.id
-        }
         setSession(id)
     }
 
-    public func resendConfirmation(email: String) async throws {
-        await pause()
-        _ = try world.read { _, _ in () }
-    }
-
-    public func signIn(email: String, password: String) async throws {
-        await pause()
-        let address = email.lowercased().trimmingCharacters(in: .whitespaces)
-        let id: UUID = try world.read { state, _ in
-            guard let account = state.accounts.values.first(where: { $0.email == address }),
-                  account.password == password
-            else { throw AppError.invalidCredentials }
-            guard account.confirmed else { throw AppError.emailNotConfirmed }
-            return account.id
-        }
-        setSession(id)
-    }
-
-    public func signInWithApple(idToken: String, nonce: String, displayName: String?) async throws {
-        // There is no Apple identity to verify against in memory.
-        throw AppError.appleSignInUnavailable
-    }
-
-    public func requestPasswordReset(email: String) async throws {
-        await pause()
-        let address = email.lowercased()
-        // Succeeds whether or not the address exists, as the real service does.
-        try world.mutate { state, _ in
-            if let account = state.accounts.values.first(where: { $0.email == address }) {
-                state.accounts[account.id]?.pendingCode = LocalWorld.verificationCode
-            }
-        }
-    }
-
-    public func resetPassword(email: String, code: String, newPassword: String) async throws {
-        await pause()
-        guard InputRules.isAcceptablePassword(newPassword) else { throw AppError.weakPassword }
-        let address = email.lowercased()
-        let id: UUID = try world.mutate { state, _ in
-            guard let account = state.accounts.values.first(where: { $0.email == address }),
-                  account.pendingCode == code
-            else { throw AppError.invalidCode }
-            state.accounts[account.id]?.password = newPassword
-            state.accounts[account.id]?.pendingCode = nil
-            state.accounts[account.id]?.confirmed = true
-            return account.id
-        }
-        setSession(id)
-    }
-
-    public func changePassword(to newPassword: String) async throws {
+    /// In memory there is no Apple to verify a token with, so the token itself
+    /// stands in for the Apple ID it would have proved.
+    public func backUpWithApple(idToken: String, nonce: String) async throws {
         await pause()
         let uid = try user()
-        guard InputRules.isAcceptablePassword(newPassword) else { throw AppError.weakPassword }
-        try world.mutate { state, _ in state.accounts[uid]?.password = newPassword }
+        try world.mutate { state, _ in
+            if state.accounts.values.contains(where: { $0.appleSubject == idToken && $0.id != uid }) {
+                throw AppError.backupAlreadyInUse
+            }
+            state.accounts[uid]?.appleSubject = idToken
+        }
+        setSession(uid)
+    }
+
+    public func restoreWithApple(idToken: String, nonce: String) async throws {
+        await pause()
+        let id: UUID = try world.mutate { state, _ in
+            if let existing = state.accounts.values.first(where: { $0.appleSubject == idToken }) {
+                return existing.id
+            }
+            let id = UUID()
+            state.accounts[id] = LocalWorld.Account(id: id, appleSubject: idToken)
+            state.profiles[id] = Profile(id: id, displayName: "", timeZone: TimeZone.current.identifier)
+            state.preferences[id] = NotificationPreferences()
+            return id
+        }
+        setSession(id)
     }
 
     public func signOut() async throws {

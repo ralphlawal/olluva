@@ -270,14 +270,9 @@ enum UnconfiguredBackend {
 
         func restoreSession() async -> AuthState { .signedOut }
         func stateChanges() -> AsyncStream<AuthState> { AsyncStream { $0.finish() } }
-        func signUp(email: String, password: String, displayName: String) async throws -> SignUpOutcome { throw fail }
-        func confirmSignUp(email: String, code: String) async throws { throw fail }
-        func resendConfirmation(email: String) async throws { throw fail }
-        func signIn(email: String, password: String) async throws { throw fail }
-        func signInWithApple(idToken: String, nonce: String, displayName: String?) async throws { throw fail }
-        func requestPasswordReset(email: String) async throws { throw fail }
-        func resetPassword(email: String, code: String, newPassword: String) async throws { throw fail }
-        func changePassword(to newPassword: String) async throws { throw fail }
+        func startAnonymously() async throws { throw fail }
+        func backUpWithApple(idToken: String, nonce: String) async throws { throw fail }
+        func restoreWithApple(idToken: String, nonce: String) async throws { throw fail }
         func signOut() async throws { throw fail }
         func deleteAccount() async throws { throw fail }
         func exportData() async throws -> Data { throw fail }

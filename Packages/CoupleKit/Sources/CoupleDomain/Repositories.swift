@@ -5,38 +5,43 @@ import Foundation
 
 public enum AuthState: Equatable, Sendable {
     case signedOut
-    case signedIn(userID: UUID, email: String?)
+    /// `isBackedUp` is false while the identity exists only on this phone.
+    case signedIn(userID: UUID, isBackedUp: Bool)
 
     public var userID: UUID? {
         if case .signedIn(let id, _) = self { id } else { nil }
     }
+
+    public var isBackedUp: Bool {
+        if case .signedIn(_, let backedUp) = self { backedUp } else { false }
+    }
 }
 
-public enum SignUpOutcome: Equatable, Sendable {
-    case signedIn
-    /// The project requires email confirmation; a code has been sent.
-    case confirmationRequired
-}
-
+/// Identity without sign-up. A person starts with an anonymous identity that
+/// lives in this phone's Keychain; nothing is asked of them. They can later
+/// attach their Apple ID to it, which is what lets them get back in from
+/// another phone.
 public protocol AuthRepository: Sendable {
     /// Restores a stored session, refreshing it if needed.
     func restoreSession() async -> AuthState
-    /// Emits whenever the session starts, ends or is lost (expiry, remote sign-out).
+    /// Emits whenever the session starts, ends, is lost, or gains a backup.
     func stateChanges() -> AsyncStream<AuthState>
 
-    func signUp(email: String, password: String, displayName: String) async throws -> SignUpOutcome
-    func confirmSignUp(email: String, code: String) async throws
-    func resendConfirmation(email: String) async throws
-    func signIn(email: String, password: String) async throws
-    func signInWithApple(idToken: String, nonce: String, displayName: String?) async throws
-    func requestPasswordReset(email: String) async throws
-    func resetPassword(email: String, code: String, newPassword: String) async throws
-    func changePassword(to newPassword: String) async throws
+    /// Creates a new anonymous identity on this device.
+    func startAnonymously() async throws
+    /// Attaches an Apple ID to the current identity. Fails with
+    /// `.backupAlreadyInUse` if that Apple ID already backs up another one.
+    func backUpWithApple(idToken: String, nonce: String) async throws
+    /// Signs in to the identity an Apple ID backs up. If there is none, a new
+    /// (already backed-up) identity is created.
+    func restoreWithApple(idToken: String, nonce: String) async throws
+    /// Ends the session on this device. Only safe once backed up: without a
+    /// backup there is no way to sign back in.
     func signOut() async throws
 
-    /// Permanently deletes the account and the data it owns.
+    /// Permanently deletes the identity and the data it owns.
     func deleteAccount() async throws
-    /// Everything the signed-in person has authored, as a JSON document.
+    /// Everything the person has authored, as a JSON document.
     func exportData() async throws -> Data
 }
 

@@ -377,7 +377,7 @@ final class PurchaseStoreTests: XCTestCase {
         XCTAssertTrue(purchases.deviceEntitlement.isPremium)
 
         // Same Apple ID, different app account signs in on this phone.
-        let other = fixture.world.addAccount(name: "Other", email: "other@example.test")
+        let other = fixture.world.addAccount(name: "Other")
         let otherSession = SessionStore(backend: LocalBackend(world: fixture.world, signedInAs: other).makeBackend())
         await otherSession.start(isMissingBackend: false)
         let otherPurchases = PurchaseStore(backend: fixture.backend, session: otherSession)

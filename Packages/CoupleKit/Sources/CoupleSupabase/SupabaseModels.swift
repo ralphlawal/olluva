@@ -393,19 +393,18 @@ enum SupabaseErrorMapper {
             switch auth {
             case .sessionMissing:
                 return .sessionExpired
-            case .weakPassword:
-                return .weakPassword
             case .api(_, let code, _, _):
                 switch code {
-                case .invalidCredentials: return .invalidCredentials
-                case .emailNotConfirmed: return .emailNotConfirmed
-                case .userAlreadyExists, .emailExists: return .emailAlreadyRegistered
-                case .otpExpired: return .invalidCode
-                case .weakPassword: return .weakPassword
-                case .overRequestRateLimit, .overEmailSendRateLimit: return .rateLimited
+                case .identityAlreadyExists, .emailExists, .userAlreadyExists:
+                    return .backupAlreadyInUse
+                case .anonymousProviderDisabled, .providerDisabled:
+                    return .notConfigured
+                case .overRequestRateLimit, .overEmailSendRateLimit:
+                    return .rateLimited
                 case .sessionNotFound, .refreshTokenNotFound, .refreshTokenAlreadyUsed, .sessionExpired, .userNotFound:
                     return .sessionExpired
-                default: return .unexpected(code: "auth:\(code.rawValue)")
+                default:
+                    return .unexpected(code: "auth:\(code.rawValue)")
                 }
             default:
                 return .unexpected(code: "auth")

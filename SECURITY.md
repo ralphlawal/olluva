@@ -1,7 +1,7 @@
 # Security and privacy
 
 ## Threat model in one paragraph
-The content is intimate. The realistic threats are: another user reading or altering a couple's data by guessing identifiers or calling the API directly; someone joining a space they were not invited to; a former partner retaining access; premium being self-granted; private text leaking through a Lock Screen, a log or shared storage; and a lost or borrowed phone. The client is assumed to be hostile: nothing below depends on the app behaving.
+The content is intimate. People have no account: each phone holds an anonymous identity, optionally backed up with an Apple ID (ADR 0008). The realistic threats are: another user reading or altering a couple's data by guessing identifiers or calling the API directly; someone joining a space they were not invited to; a former partner retaining access; premium being self-granted; private text leaking through a Lock Screen, a log or shared storage; and a lost or borrowed phone. The client is assumed to be hostile: nothing below depends on the app behaving.
 
 ## Controls
 
@@ -22,21 +22,24 @@ The content is intimate. The realistic threats are: another user reading or alte
 | Private text on a Lock Screen | Notification previews and Lock Screen widget text are off by default; the outbox stores ids only | `accounts.test.js`, `WidgetSnapshotTests`, `functions.test.js` |
 | Secrets in the app | Only the public anon key is in the app. The service-role key, APNs key and cron secret exist only as Edge Function secrets | Code review; `.gitignore` |
 | Transport | The backend URL is built as `https://` + host; a host containing a scheme or path is rejected | `ConfigurationTests` |
-| Anonymous access | `anon` can read no table and call no function | `pairing.test.js` "anonymous access" |
+| Unauthenticated access | The `anon` role (no identity at all) can read no table and call no function | `pairing.test.js` "anonymous access" |
+| Anonymous identities over-reaching | They are ordinary authenticated users: same policies, no exceptions | `accounts.test.js` "identity without sign-up" |
+| Taking over a space through backup | An Apple ID can be linked to one identity only; linking is done by Supabase Auth from an Apple-signed token | `LocalBackendTests`; not yet tested against Supabase |
 | Data on the device | Session in the Keychain (SDK default). Caches, outbox, drafts and the widget snapshot use file protection until first unlock, and are wiped on sign-out, unlink and deletion. The invitation code is kept in the Keychain, this device only. | `NotesStoreTests`, `WidgetSnapshotTests` |
 | Logs | App and function logs carry event names and codes only. `Diagnostics` and `log()` take no user content. | Code review |
 
 ## What is not claimed
 - **No end-to-end encryption.** Supabase staff with database access, and anyone who compromised the project, could read content. See ADR 0007. The app says so in its privacy explainer.
 - **Invitation hashes are fast hashes.** A leaked database would allow offline guessing of unexpired codes (50 bits, 48 hours). Accepted for the convenience of short codes.
-- **Rate limits are per account**, not per IP or device. Supabase Auth's own limits cover sign-up and sign-in. Add CAPTCHA to sign-up if abuse appears.
+- **Identities are free to create.** Limits on invitations and redemption attempts are per identity, so someone willing to create many identities gets many attempts. What stands in the way is Supabase's per-IP rate limit on anonymous sign-ins and the 50-bit, 48-hour codes. There is no CAPTCHA or App Attest yet; add one if abuse appears.
+- **No recovery without a backup.** A person who has not attached their Apple ID and loses their phone cannot get back into their space. Nobody else can either.
 - **No certificate pinning.** Standard system trust is used.
 - **No screenshot or screen-recording protection.**
 - **No jailbreak detection.**
 
 ## Account deletion and export
 - Export: `export_my_data()` returns everything the caller authored as JSON, including from spaces that have ended. It never includes the partner's content. Media files are referenced by path, not embedded.
-- Deletion: the `delete-account` function identifies the caller from their token only, runs `prepare_account_deletion` (ends the space, deletes authored notes, memories and surprises, queues media), then deletes the auth user; foreign keys cascade the rest. Deleting an account does not cancel an App Store subscription, and the app says so.
+- Deletion ("Delete everything"): the `delete-account` function identifies the caller from their token only, runs `prepare_account_deletion` (ends the space, deletes authored notes, memories and surprises, queues media), then deletes the auth user; foreign keys cascade the rest. Deleting an account does not cancel an App Store subscription, and the app says so.
 
 ## Not yet verified
 Everything in the table above is tested against a real Postgres with a shim for Supabase's roles and `auth.uid()`. It has **not** been run against a hosted Supabase project. Before launch: apply the migrations to a staging project, run the Supabase security advisor, and repeat the cross-couple tests through the real API with two real accounts. Storage policies in particular should be re-tested there, since the shim only models the `storage.objects` table.

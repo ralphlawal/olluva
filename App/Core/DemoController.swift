@@ -11,16 +11,16 @@ import UIKit
 /// itself as a demo wherever this is active.
 ///
 /// Scenarios (launch argument `-demoScenario <name>`):
-///   fresh     no account; a demo partner is waiting with invitation code SAMSAM2345
-///   solo      signed in, not yet paired
+///   fresh     first launch; a demo partner is waiting with invitation code SAMSAM2345
+///   solo      started and named, not yet paired
 ///   empty     paired, nothing written yet
 ///   paired    paired, with notes, memories, dates and a scheduled surprise
 ///   premium   as `paired`, with a premium partner
 @MainActor
 final class DemoController {
     static let partnerInviteCode = "SAMSAM2345"
-    static let email = "alex@example.test"
-    static let password = "password1"
+    /// Stands in for an Apple ID wherever the demo backs up or restores.
+    static let appleID = "demo-apple-id"
 
     let world: LocalWorld
     let backend: Backend
@@ -33,12 +33,14 @@ final class DemoController {
         // A little latency makes loading states visible when reviewing by hand;
         // tests run without it.
         world = LocalWorld(latency: isUITesting ? .milliseconds(20) : .milliseconds(350))
-        partnerID = world.addAccount(name: "Sam", email: "sam@example.test")
+        partnerID = world.addAccount(name: "Sam")
         partnerSession = LocalBackend(world: world, signedInAs: partnerID)
 
         var me: UUID?
         if scenario != "fresh" {
-            me = world.addAccount(name: "Alex", email: Self.email, password: Self.password)
+            // Starting signed out models a new phone: the space was backed up
+            // on the old one and is waiting to be restored.
+            me = world.addAccount(name: "Alex", appleID: startsSignedOut ? Self.appleID : nil)
         }
         local = LocalBackend(world: world, signedInAs: startsSignedOut ? nil : me)
         backend = local.makeBackend()
