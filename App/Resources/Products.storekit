@@ -29,7 +29,7 @@
               "locale": "en_US"
             }
           ],
-          "productID": "com.example.couplenotes.premium.yearly",
+          "productID": "com.ralphlawal.couplenotes.premium.yearly",
           "recurringSubscriptionPeriod": "P1Y",
           "referenceName": "Premium Yearly",
           "subscriptionGroupID": "21500001",
@@ -50,7 +50,7 @@
               "locale": "en_US"
             }
           ],
-          "productID": "com.example.couplenotes.premium.monthly",
+          "productID": "com.ralphlawal.couplenotes.premium.monthly",
           "recurringSubscriptionPeriod": "P1M",
           "referenceName": "Premium Monthly",
           "subscriptionGroupID": "21500001",

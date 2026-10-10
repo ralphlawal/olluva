@@ -11,6 +11,7 @@ enum AppLinks {
     static let privacy = site.appendingPathComponent("privacy/")
     static let terms = site.appendingPathComponent("terms/")
     static let support = site.appendingPathComponent("support/")
+    static let supportEmail = "hello@olluva.app"
 }
 
 // Screen: Settings
@@ -129,6 +130,7 @@ struct SettingsView: View {
 
                 Section {
                     Link(destination: AppLinks.support) { row("questionmark.circle", "Help and support") }
+                    Link(destination: URL(string: "mailto:\(AppLinks.supportEmail)")!) { row("envelope", "Contact us", detail: LocalizedStringKey(AppLinks.supportEmail)) }
                     Link(destination: AppLinks.terms) { row("doc.text", "Terms of Use") }
                 } header: {
                     Text("Support")

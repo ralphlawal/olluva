@@ -21,8 +21,8 @@ public enum ProductConfiguration {
 
     /// Placeholder identifiers. Replace with the products created in App Store
     /// Connect; the bundled `Products.storekit` file must use the same values.
-    public static let monthlyProductID = "com.example.couplenotes.premium.monthly"
-    public static let yearlyProductID = "com.example.couplenotes.premium.yearly"
+    public static let monthlyProductID = "com.ralphlawal.couplenotes.premium.monthly"
+    public static let yearlyProductID = "com.ralphlawal.couplenotes.premium.yearly"
     public static let productIDs = [yearlyProductID, monthlyProductID]
     public static let subscriptionGroupID = "premium"
 

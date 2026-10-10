@@ -48,7 +48,7 @@ Defined in one place: `ProductConfiguration` (client) and `app_private.couple_li
 | Surprises waiting at once | 1 | 50 |
 | Important dates | 100 | 100 |
 
-Product identifiers are placeholders: `com.example.couplenotes.premium.monthly` and `.yearly`. The prices in `Products.storekit` exist only so StoreKit can be tested locally; they are not a pricing decision.
+Product identifiers: `com.ralphlawal.couplenotes.premium.monthly` and `.yearly`. Prices (US storefront, decided 11 October 2026): **$3.99 a month, $29.99 a year**, no introductory offer; one subscription covers both people. The free limits above are confirmed. The bundle identifier stays `com.ralphlawal.couplenotes`: nobody using the app sees it, and changing it would mean a new App ID, App Group and push topic. The products still have to be created in App Store Connect with these identifiers and prices.
 
 ## Screens
 Welcome · Privacy explainer · Restore a backed-up space · Name step · Pairing chooser · Invitation (code, QR, share) · Enter code · Accept or decline · Notification priming · Today (home) · Composer (words, draw, photo, style, stickers) · Photo crop · Recipient preview · Send later · Note detail · Earlier notes · Memories timeline · Memory detail · Add or edit a moment · Us · Date editor · Personalise (themes, accent, widget style, appearance) · Widget help · Backup offer · Settings · Profile · Back up your space · Notification settings · Unlink · Delete everything · Premium.
