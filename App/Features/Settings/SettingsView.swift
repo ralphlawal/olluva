@@ -4,12 +4,13 @@ import PhotosUI
 import StoreKit
 import SwiftUI
 
-/// These pages must exist on the site before release; see APP_STORE_CHECKLIST.md.
+/// The public site, served for now from GitHub Pages. When www.olluva.app
+/// is pointed at it, only `site` needs to change.
 enum AppLinks {
-    static let privacy = URL(string: "https://www.olluva.app/privacy")!
-    static let terms = URL(string: "https://www.olluva.app/terms")!
-    static let support = URL(string: "https://www.olluva.app/support")!
-    static let supportEmail = "support@olluva.app"
+    static let site = URL(string: "https://ralphlawal.github.io/olluva/")!
+    static let privacy = site.appendingPathComponent("privacy/")
+    static let terms = site.appendingPathComponent("terms/")
+    static let support = site.appendingPathComponent("support/")
 }
 
 // Screen: Settings
@@ -128,7 +129,6 @@ struct SettingsView: View {
 
                 Section {
                     Link(destination: AppLinks.support) { row("questionmark.circle", "Help and support") }
-                    Link(destination: URL(string: "mailto:\(AppLinks.supportEmail)")!) { row("envelope", "Contact us", detail: LocalizedStringKey(AppLinks.supportEmail)) }
                     Link(destination: AppLinks.terms) { row("doc.text", "Terms of Use") }
                 } header: {
                     Text("Support")

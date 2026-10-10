@@ -69,7 +69,7 @@ Schema and policies (36 live API checks), anonymous sign-in, pairing, notes, Rea
 - Offline reading from a local database. Loaded content stays visible offline; unsent notes and drafts are kept on disk.
 
 ### Placeholders to replace before release
-Bundle and App Group identifiers (working values in `Config/Secrets.xcconfig`) · product identifiers and prices · the Privacy Policy, Terms and support pages that the app links to on www.olluva.app, and the support@olluva.app mailbox · app icon (generated; needs design review) · security contact.
+Bundle and App Group identifiers (working values in `Config/Secrets.xcconfig`) · product identifiers and prices · legal review of the draft Privacy Policy and Terms in `site/` (published at https://ralphlawal.github.io/olluva/ until www.olluva.app is pointed at it), and a support contact address · app icon (generated; needs design review) · security contact.
 
 ### Other things to know
 - Swift language mode is 5; strict concurrency is a follow-up.
