@@ -210,6 +210,10 @@ final class AppEnvironment {
         widgets.publish(session: session, notes: notes)
     }
 
+    func publishWidgetAndWait() async {
+        await widgets.publishAndWait(session: session, notes: notes)
+    }
+
     // MARK: - Links
 
     func open(_ url: URL) {

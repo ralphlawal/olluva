@@ -514,3 +514,30 @@ final class AccountDeletionTests: XCTestCase {
         XCTAssertTrue(fixture.world.hasAccount(fixture.me))
     }
 }
+
+@MainActor
+final class StaleNoteTests: XCTestCase {
+    func testANoteRemovedOnTheServerDisappearsFromTheFeedAndTheWidgetOnRefresh() async throws {
+        let fixture = Fixture()
+        defer { fixture.cleanUp() }
+        let session = SessionStore(backend: fixture.backend)
+        await session.start(isMissingBackend: false)
+        let notes = fixture.notesStore()
+        let settings = LocalSettings(defaults: UserDefaults(suiteName: "stale-\(UUID().uuidString)")!)
+        let bridge = WidgetBridge(store: nil, media: fixture.media, settings: settings)
+
+        let kept = try XCTUnwrap(fixture.world.deliverNote(from: fixture.partner, content: NoteContent(body: "kept"), at: Date().addingTimeInterval(-60)))
+        _ = try XCTUnwrap(fixture.world.deliverNote(from: fixture.partner, content: NoteContent(body: "taken back")))
+        await notes.load(coupleID: fixture.couple)
+        XCTAssertEqual(bridge.snapshot(session: session, notes: notes).note?.content.body, "taken back")
+
+        // The partner deletes their whole account: their notes are gone from
+        // the server outright, with no tombstone to announce it.
+        try await fixture.partnerBackend.deleteAccount()
+        _ = kept
+        await session.refresh()
+        await notes.load(coupleID: fixture.couple)
+        XCTAssertTrue(notes.feed.notes.isEmpty, "nothing the server no longer has may remain")
+        XCTAssertNotEqual(bridge.snapshot(session: session, notes: notes).state, .note)
+    }
+}

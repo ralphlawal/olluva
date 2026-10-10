@@ -70,6 +70,18 @@ final class NotesStore {
             async let reactions = backend.notes.reactions(coupleID: coupleID)
             let (loadedNotes, loadedReactions) = try await (notes, reactions)
             guard self.coupleID == coupleID else { return }
+            // The server's answer is the truth for the span it covers. Anything
+            // held locally inside that span that the server no longer returns
+            // has been removed there (an account deleted, a space purged) and
+            // must not linger here or on the widget.
+            let returned = Set(loadedNotes.map(\.id))
+            let isWholeHistory = loadedNotes.count < Self.pageSize
+            let oldestReturned = loadedNotes.map(\.createdAt).min()
+            for stale in feed.notes where !returned.contains(stale.id) {
+                if isWholeHistory || oldestReturned.map({ stale.createdAt >= $0 }) == true {
+                    feed.remove(id: stale.id)
+                }
+            }
             for note in loadedNotes { feed.apply(note) }
             hasMoreHistory = loadedNotes.count == Self.pageSize
             self.reactions = Dictionary(grouping: loadedReactions, by: \.noteID)

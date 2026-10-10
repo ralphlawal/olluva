@@ -161,6 +161,13 @@ final class WidgetBridge {
         return snapshot
     }
 
+    /// Publishes and waits for the files to be written. Used when the app has
+    /// been woken in the background and may be suspended again at any moment.
+    func publishAndWait(session: SessionStore, notes: NotesStore) async {
+        publish(session: session, notes: notes)
+        await writeTask?.value
+    }
+
     func publish(session: SessionStore, notes: NotesStore) {
         guard let store else { return }
         var snapshot = snapshot(session: session, notes: notes)

@@ -6,7 +6,7 @@
 export interface ClaimedNotification {
   id: number;
   user_id: string;
-  category: "new_note" | "surprise" | "important_date" | "pairing" | "account";
+  category: "new_note" | "surprise" | "important_date" | "pairing" | "account" | "sync";
   payload: Record<string, unknown>;
   tokens: { token: string; environment: "sandbox" | "production" }[];
   sender_name: string;

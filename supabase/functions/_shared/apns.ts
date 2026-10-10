@@ -44,6 +44,41 @@ export interface PushMessage {
 
 export type PushResult = "sent" | "invalid_token" | "failed";
 
+function resultOf(response: Response, reason: string | undefined): PushResult {
+  if (response.ok) return "sent";
+  if (response.status === 410 || reason === "BadDeviceToken" || reason === "Unregistered" || reason === "DeviceTokenNotForTopic") {
+    return "invalid_token";
+  }
+  return "failed";
+}
+
+/**
+ * A silent push: nothing is shown. It asks iOS to wake the app so it can
+ * fetch the current state and redraw its widget (for example after a note
+ * was deleted). iOS delivers these at low priority and may delay or drop
+ * them, so the app also refreshes whenever it is opened.
+ */
+export async function sendBackgroundPush(
+  token: string,
+  environment: "sandbox" | "production",
+  data: Record<string, string>,
+): Promise<PushResult> {
+  const host = environment === "production" ? "api.push.apple.com" : "api.sandbox.push.apple.com";
+  const response = await fetch(`https://${host}/3/device/${token}`, {
+    method: "POST",
+    headers: {
+      authorization: `bearer ${await providerToken()}`,
+      "apns-topic": requireEnv("APPLE_BUNDLE_ID"),
+      "apns-push-type": "background",
+      "apns-priority": "5",
+      "apns-expiration": String(Math.floor(Date.now() / 1000) + 3600),
+    },
+    body: JSON.stringify({ aps: { "content-available": 1 }, category: "sync", ...data }),
+  });
+  const reason = await response.json().then((body) => body?.reason as string | undefined).catch(() => undefined);
+  return resultOf(response, reason);
+}
+
 export async function sendPush(
   token: string,
   environment: "sandbox" | "production",
@@ -75,8 +110,5 @@ export async function sendPush(
 
   if (response.ok) return "sent";
   const reason = await response.json().then((body) => body?.reason as string | undefined).catch(() => undefined);
-  if (response.status === 410 || reason === "BadDeviceToken" || reason === "Unregistered" || reason === "DeviceTokenNotForTopic") {
-    return "invalid_token";
-  }
-  return "failed";
+  return resultOf(response, reason);
 }

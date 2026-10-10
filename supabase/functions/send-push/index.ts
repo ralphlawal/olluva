@@ -2,7 +2,7 @@
 // Drains the notification outbox. Deploy with --no-verify-jwt; access is
 // controlled by the CRON_SECRET header instead.
 import { isAuthorisedWorker, json, log, serviceClient } from "../_shared/http.ts";
-import { sendPush } from "../_shared/apns.ts";
+import { sendBackgroundPush, sendPush } from "../_shared/apns.ts";
 import { type ClaimedNotification, notificationText } from "../_shared/messages.ts";
 
 Deno.serve(async (request) => {
@@ -20,7 +20,9 @@ Deno.serve(async (request) => {
   let sent = 0;
   let failed = 0;
   for (const item of (data ?? []) as ClaimedNotification[]) {
-    const text = notificationText(item);
+    // A sync entry shows nothing: it only asks the app to refresh itself.
+    const isSync = item.category === "sync";
+    const text = isSync ? { title: "", body: "", data: {} } : notificationText(item);
     if (!text || item.tokens.length === 0) {
       await admin.rpc("complete_notification", { p_id: item.id, p_status: "skipped", p_invalid_tokens: [] });
       continue;
@@ -31,12 +33,14 @@ Deno.serve(async (request) => {
     let retryable = false;
     for (const device of item.tokens) {
       try {
-        const result = await sendPush(device.token, device.environment, {
-          title: text.title,
-          body: text.body,
-          category: item.category,
-          data: { ...text.data, category: item.category },
-        });
+        const result = isSync
+          ? await sendBackgroundPush(device.token, device.environment, {})
+          : await sendPush(device.token, device.environment, {
+            title: text.title,
+            body: text.body,
+            category: item.category,
+            data: { ...text.data, category: item.category },
+          });
         if (result === "sent") delivered = true;
         else if (result === "invalid_token") invalid.push(device.token);
         else retryable = true;

@@ -101,6 +101,24 @@ describe('notifications', () => {
     assert.ok(!rows[0].payload.includes('private sentence'));
   });
 
+  test('deleting or editing a note queues a silent refresh for the partner, whatever their preferences', async () => {
+    const { a, b, coupleId } = await db.createCouple();
+    await db.query(b, 'update public.notification_preferences set new_notes = false');
+    const [note] = await db.query(a, `insert into public.notes (couple_id, author_id, body) values ($1, $2, 'regret this') returning id`, [coupleId, a]);
+    const sync = async () => (await db.admin(`select user_id, payload::text as payload from public.notification_outbox where category = 'sync' and user_id = any($1) order by id`, [[a, b]])).rows;
+
+    // Being read is not a change to what is shown: the author's phone is not woken.
+    await db.query(b, 'select public.mark_note_seen($1)', [note.id]);
+    assert.deepEqual(await sync(), []);
+
+    await db.query(a, 'select public.update_note($1, 1, $2, $3, null, null)', [note.id, 'better words', {}]);
+    await db.query(a, 'select public.delete_note($1)', [note.id]);
+    const rows = await sync();
+    assert.equal(rows.length, 2, 'one for the edit, one for the delete');
+    assert.ok(rows.every((r) => r.user_id === b), 'only the partner, never the author');
+    assert.ok(rows.every((r) => !r.payload.includes('regret') && !r.payload.includes('better')), 'no content in the queue');
+  });
+
   test('previews are off by default and included only when the recipient opts in', async () => {
     const { a, b, coupleId } = await db.createCouple('Ada', 'Ben');
     await db.query(b, 'select public.register_device_token($1, $2)', [TOKEN('ab'), 'sandbox']);

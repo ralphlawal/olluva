@@ -49,7 +49,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     ) async -> UIBackgroundFetchResult {
         guard let app = await app else { return .noData }
         await app.refreshContent()
-        await app.publishWidget()
+        // Wait for the snapshot to reach disk: iOS may suspend the app the
+        // moment this method returns.
+        await app.publishWidgetAndWait()
         return .newData
     }
 }
