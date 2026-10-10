@@ -52,3 +52,4 @@ th { color: var(--ink-2); font-weight: 600; font-size: .8rem; text-transform: up
 .points p { margin: 0; color: var(--ink-2); }
 footer.site { border-top: 1px solid var(--hairline); margin-top: 4rem; padding: 1.5rem 0 3rem; font-size: .9rem; color: var(--ink-2); }
 footer.site a { color: var(--ink-2); margin-right: 1rem; }
+footer.site p { color: var(--ink-2); }
