@@ -168,6 +168,17 @@ describe('notifications', () => {
     assert.deepEqual(await owner(), []);
   });
 
+  test('a device token is only ever registered under one push environment', async () => {
+    const { a } = await db.createCouple();
+    const token = TOKEN('9a');
+    const environments = async () => (await db.admin('select environment from public.device_tokens where token = $1', [token])).rows.map((r) => r.environment);
+    await db.query(a, 'select public.register_device_token($1, $2)', [token, 'production']);
+    await db.query(a, 'select public.register_device_token($1, $2)', [token, 'sandbox']);
+    assert.deepEqual(await environments(), ['sandbox']);
+    await db.query(a, 'select public.register_device_token($1, $2)', [token, 'production']);
+    assert.deepEqual(await environments(), ['production']);
+  });
+
   test('pairing and unlinking notify the other person only', async () => {
     const { a, b, coupleId } = await db.createCouple();
     const outbox = async (user) => (await db.admin('select category, payload from public.notification_outbox where user_id = $1 order by id', [user])).rows;

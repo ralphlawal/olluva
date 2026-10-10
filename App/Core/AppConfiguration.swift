@@ -1,4 +1,5 @@
 import CoupleDomain
+import CoupleWidgetUI
 import Foundation
 
 /// Build-time and launch-time configuration, read once at start-up.
@@ -48,7 +49,7 @@ struct AppConfiguration {
         }
 
         appGroupID = value("AppGroupID")
-        pushEnvironment = value("PushEnvironment") == "production" ? .production : .sandbox
+        pushEnvironment = PushSigning.environment(bundle: bundle, buildSetting: value("PushEnvironment"))
         displayName = value("CFBundleDisplayName").isEmpty ? "Olluva" : value("CFBundleDisplayName")
         version = value("CFBundleShortVersionString")
         build = value("CFBundleVersion")

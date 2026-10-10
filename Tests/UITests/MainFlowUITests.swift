@@ -105,7 +105,8 @@ final class HomeAndNotesUITests: UITestCase {
 
         app.element("composer.queue").tap()
         app.element("home.pending").waitToAppear()
-        XCTAssertTrue(app.staticTexts["Not sent yet"].exists)
+        // Queuing retries once straight away, so the card can briefly say "Sending…".
+        app.staticTexts["Not sent yet"].waitToAppear()
         snapshot("32-home-pending")
     }
 

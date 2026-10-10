@@ -158,7 +158,7 @@ struct NotePushHandler: WidgetPushHandler {
 
     func pushTokenDidChange(_ pushInfo: WidgetPushInfo, widgets: [WidgetInfo]) {
         let groupID = Bundle.main.object(forInfoDictionaryKey: "AppGroupID") as? String ?? ""
-        let environment = Bundle.main.object(forInfoDictionaryKey: "PushEnvironment") as? String ?? "development"
+        let environment = PushSigning.environment(buildSetting: Bundle.main.object(forInfoDictionaryKey: "PushEnvironment") as? String)
         guard let store = WidgetSnapshotStore(appGroupID: groupID) else { return }
         let token = pushInfo.token
         // Hold the extension until the request has gone: it may be suspended
@@ -166,7 +166,7 @@ struct NotePushHandler: WidgetPushHandler {
         let done = DispatchSemaphore(value: 0)
         Task.detached {
             await WidgetRemoteRefresher.registerPushToken(
-                token, environment: environment == "production" ? "production" : "sandbox", store: store
+                token, environment: environment.rawValue, store: store
             )
             done.signal()
         }
