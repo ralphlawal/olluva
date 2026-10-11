@@ -139,6 +139,13 @@ final class AppEnvironment {
         notifications.onRemoteChange = { [weak self] in await self?.refreshContent() }
         notifications.activate()
         purchases.start()
+        #if DEBUG
+        // Development aid: ask the store for the products at launch, so the
+        // result can be read from the console without opening the paywall.
+        if ProcessInfo.processInfo.arguments.contains("-probeProducts") {
+            Task { await purchases.loadProducts() }
+        }
+        #endif
 
         await session.start(isMissingBackend: configuration.isMissingBackend)
         if session.userID == nil { widgets.clear() }

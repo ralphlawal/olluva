@@ -74,9 +74,12 @@ final class PurchaseStore {
             products = loaded.sorted {
                 (ProductConfiguration.productIDs.firstIndex(of: $0.id) ?? 0) < (ProductConfiguration.productIDs.firstIndex(of: $1.id) ?? 0)
             }
+            let storefront = await Storefront.current?.countryCode ?? "none"
+            Diagnostics.trace("store: \(loaded.count) of \(ProductConfiguration.productIDs.count) products returned, storefront \(storefront)")
             productsState = products.isEmpty ? .failed(.productsUnavailable) : .loaded
         } catch {
             Diagnostics.failure(Diagnostics.store, "loadProducts", error)
+            Diagnostics.trace("store: product request failed: \(String(describing: error))")
             productsState = .failed(.productsUnavailable)
         }
     }
