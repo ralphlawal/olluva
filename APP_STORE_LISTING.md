@@ -97,7 +97,7 @@ Not collected: location, contacts, browsing or search history, health, financial
 
 ## Screenshots
 
-In `store-screenshots/` at 1320 × 2868 (6.9-inch iPhone), taken from the app with sample data. Suggested order and captions:
+In `store-screenshots/`, taken from the app with sample data: `6.3-inch/` at 1206 × 2622, which is the size App Store Connect's "iPhone with Dynamic Island (medium display)" slot takes, and `6.9-inch/` at 1320 × 2868. Suggested order and captions:
 
 1. Today, with a note received: "Notes from your person, the moment they send them"
 2. Composer with styles: "Write it the way you mean it"
