@@ -32,21 +32,14 @@ struct RootView: View {
     }
 }
 
-/// The in-app half of the launch experience: the mark settles onto the same
-/// colour the system launch screen showed, so there is no flash between them.
+/// The in-app half of the launch experience. It draws the app icon exactly
+/// where the system launch screen drew it, on the same colour, so the two are
+/// indistinguishable and nothing moves or flashes while the session loads.
 struct SplashView: View {
-    @Environment(\.palette) private var palette
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var settled = false
-
     var body: some View {
-        BrandMark(size: 92)
-            .rotationEffect(.degrees(settled || reduceMotion ? 0 : -8))
-            .scaleEffect(settled || reduceMotion ? 1 : 0.92)
-            .opacity(settled ? 1 : 0.6)
-            .onAppear {
-                withAnimation(Motion.gentle) { settled = true }
-            }
+        Image("LaunchIcon")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .ignoresSafeArea()
             .accessibilityLabel(Text("Loading"))
     }
 }

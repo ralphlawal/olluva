@@ -1,5 +1,8 @@
 // Draws the app icon: two sheets of paper, one resting on the other.
 // Usage: swift scripts/make_app_icon.swift <output.png>
+//        swift scripts/make_app_icon.swift <output.png> <pixels>
+// With a pixel size it writes the icon as iOS shows it on the Home Screen
+// (rounded corners, transparent outside them) for the launch screen.
 import AppKit
 import CoreGraphics
 
@@ -56,7 +59,20 @@ context.setFillColor(color(0xC9566B))
 context.fillPath()
 context.restoreGState()
 
-let image = context.makeImage()!
+var image = context.makeImage()!
+if CommandLine.arguments.count > 2, let pixels = Int(CommandLine.arguments[2]) {
+    let tile = CGContext(
+        data: nil, width: pixels, height: pixels, bitsPerComponent: 8, bytesPerRow: 0, space: space,
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+    )!
+    let rect = CGRect(x: 0, y: 0, width: pixels, height: pixels)
+    let radius = CGFloat(pixels) * 0.2237
+    tile.addPath(CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil))
+    tile.clip()
+    tile.interpolationQuality = .high
+    tile.draw(image, in: rect)
+    image = tile.makeImage()!
+}
 let bitmap = NSBitmapImageRep(cgImage: image)
 try bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: output))
 print("wrote \(output)")
