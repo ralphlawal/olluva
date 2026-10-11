@@ -107,10 +107,19 @@ In `store-screenshots/`, taken from the app with sample data: `6.3-inch/` at 120
 
 Apple accepts plain screenshots; captions and device frames are optional and are not added yet.
 
-## Open before submission
+## What is left before submitting
 
-1. **App Review notes.** Built: a demo partner the reviewer pairs with using a code (ADR 0010). The notes to paste, including the code, are in `~/Desktop/olluva-review-notes.txt`, which is deliberately outside this repository.
-2. **Subscription review screenshots** for both products (`~/Desktop/olluva-premium-review-screenshot.png` will do).
-3. **Legal review** of the privacy policy and terms; operator name and address.
-4. **Support email** that receives mail.
-5. **Version 1.0** build.
+**Already done, nothing for you to do**
+
+- The 1.0 build is uploaded to App Store Connect (build 3).
+- Apple's reviewer can use the app on one phone: they enter a code and get paired with a demo partner.
+
+**For you to do in App Store Connect**
+
+1. Paste the review notes. Open `olluva-review-notes.txt` on your Desktop, copy everything, and paste it into **App Review Information → Notes** on the 1.0 page. It tells the reviewer the code to enter.
+2. Give each subscription a screenshot. In **Subscriptions → Olluva Premium**, open each of the two products and upload `olluva-premium-review-screenshot.png` from your Desktop under **Review Information**. Apple will not review a subscription without one.
+
+**Not required by Apple, but still open**
+
+3. A lawyer has not read the privacy policy or the terms. They describe the app accurately, but they are drafts.
+4. hello@olluva.app cannot receive mail, because the olluva.app domain is suspended. People who write to it get a bounce.
