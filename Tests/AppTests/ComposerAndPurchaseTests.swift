@@ -293,6 +293,28 @@ final class PurchaseStoreTests: XCTestCase {
             purchases.productsState == .loaded,
             "StoreKit testing is unavailable: set DEVELOPMENT_TEAM in Config/Secrets.xcconfig and re-run."
         )
+        // Once the products exist in App Store Connect, the simulator can load
+        // them from Apple's sandbox instead. These tests buy things: they may
+        // only ever run against the local test store, so anything else skips.
+        try XCTSkipUnless(
+            Set(purchases.products.map(\.displayName)) == Self.localDisplayNames(),
+            "The products came from the App Store sandbox, not the local StoreKit test store."
+        )
+    }
+
+    /// The product names in the bundled StoreKit configuration, which differ
+    /// from the ones in App Store Connect.
+    private static func localDisplayNames() -> Set<String> {
+        guard let url = Bundle(for: PurchaseStoreTests.self).url(forResource: "Products", withExtension: "storekit"),
+              let data = try? Data(contentsOf: url),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let groups = root["subscriptionGroups"] as? [[String: Any]]
+        else { return [] }
+        let names = groups
+            .flatMap { $0["subscriptions"] as? [[String: Any]] ?? [] }
+            .flatMap { $0["localizations"] as? [[String: Any]] ?? [] }
+            .compactMap { $0["displayName"] as? String }
+        return Set(names)
     }
 
     override func tearDown() async throws {
