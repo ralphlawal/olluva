@@ -109,7 +109,7 @@ Apple accepts plain screenshots; captions and device frames are optional and are
 
 ## Open before submission
 
-1. **How App Review will use the app.** Everything past the first two screens needs a second person. A reviewer on one device cannot pair, so the submission needs either a standing test partner that accepts a code given in the review notes, or a video of two phones. Not built or decided yet.
+1. **App Review notes.** Built: a demo partner the reviewer pairs with using a code (ADR 0010). The notes to paste, including the code, are in `~/Desktop/olluva-review-notes.txt`, which is deliberately outside this repository.
 2. **Subscription review screenshots** for both products (`~/Desktop/olluva-premium-review-screenshot.png` will do).
 3. **Legal review** of the privacy policy and terms; operator name and address.
 4. **Support email** that receives mail.

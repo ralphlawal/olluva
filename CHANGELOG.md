@@ -13,6 +13,9 @@ All notable changes to this project are recorded here. Format: [Keep a Changelog
 - **Tests**: database security suite on embedded Postgres 17, Edge Function logic tests, Swift package tests, app unit tests including StoreKit, and UI tests for the main flows.
 - **Documentation**: product spec, design system, architecture and ADRs, schema, security, testing, setup, App Store checklist.
 
+### Added (review)
+- **Demo partner for App Review** (ADR 0010): a review code that pairs through the ordinary flow with a demo identity that greets and replies. Verified against the live server.
+
 ### Changed
 - **Widgets**: a large Home Screen size, showing the note at close to full size.
 - **Profile pictures**: Today shows both of you. A new picture or name now reaches your partner's phone: pictures carry a version, because the file path never changes and a cached copy could not tell it was out of date.
