@@ -14,6 +14,8 @@ All notable changes to this project are recorded here. Format: [Keep a Changelog
 - **Documentation**: product spec, design system, architecture and ADRs, schema, security, testing, setup, App Store checklist.
 
 ### Changed
+- **Widgets**: a large Home Screen size, showing the note at close to full size.
+- **Profile pictures**: Today shows both of you. A new picture or name now reaches your partner's phone: pictures carry a version, because the file path never changes and a cached copy could not tell it was out of date.
 - **Public site**: landing, privacy, terms and support pages in `site/`, published with GitHub Pages; the app's links point there. The policy and terms are drafts awaiting legal review.
 - **No sign-up.** "Get started" creates a private identity on the phone; the only thing asked for is a name. Email, password, confirmation codes and password reset are removed. A space can be backed up with Sign in with Apple (offered once after pairing, and in Settings) and restored on a new phone. Sign-out is offered only once backed up. "Delete account" is now "Delete everything". Abandoned identities are purged after 30 days. See ADR 0008.
 - The product is named **Olluva**. Invitation and widget links use the `olluva://` scheme, and the app's legal and support links point at the public site (`site/`, published with GitHub Pages).

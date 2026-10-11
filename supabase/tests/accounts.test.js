@@ -212,6 +212,37 @@ describe('notifications', () => {
     await db.rejects(first.a, `select public.claim_subscription('otid-x', $1, 'p', 'active', now(), true, 'Sandbox', 'tx')`, [first.a], /permission denied/);
   });
 
+  test('a new profile picture or name reaches the partner, and only the partner', async () => {
+    const { a, b } = await db.createCouple();
+    const outsider = await db.createUser('Zed');
+    const version = async () => (await db.admin('select avatar_version from public.profiles where id = $1', [a])).rows[0].avatar_version;
+    const syncs = async (user) => (await db.admin(
+      `select count(*)::int as n from public.notification_outbox where user_id = $1 and category = 'sync' and dedupe_key like 'sync:profile:%'`, [user],
+    )).rows[0].n;
+    const path = `${a}/avatar.jpg`;
+
+    await db.query(a, 'update public.profiles set avatar_path = $1 where id = $2', [path, a]);
+    assert.equal(await version(), 1);
+    // A replacement picture is stored at the same path: it must still count.
+    await db.query(a, 'update public.profiles set avatar_path = $1 where id = $2', [path, a]);
+    assert.equal(await version(), 2);
+    assert.equal(await syncs(b), 2);
+    assert.equal(await syncs(a), 0);
+    assert.equal(await syncs(outsider), 0);
+
+    await db.query(a, `update public.profiles set display_name = 'Ada L' where id = $1`, [a]);
+    assert.equal(await syncs(b), 3);
+    // The time zone is nobody else's business and wakes nobody.
+    await db.query(a, `update public.profiles set time_zone = 'Europe/Dublin' where id = $1`, [a]);
+    assert.equal(await syncs(b), 3);
+
+    // The counter belongs to the server.
+    await db.rejects(a, 'update public.profiles set avatar_version = 99 where id = $1', [a], /permission denied/);
+    // The partner can read it; a stranger cannot read the profile at all.
+    assert.equal((await db.query(b, 'select avatar_version from public.profiles where id = $1', [a]))[0].avatar_version, 2);
+    assert.equal((await db.query(outsider, 'select avatar_version from public.profiles where id = $1', [a])).length, 0);
+  });
+
   test('pairing and unlinking notify the other person only', async () => {
 
     const { a, b, coupleId } = await db.createCouple();

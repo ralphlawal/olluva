@@ -197,6 +197,7 @@ extension LocalBackend: ProfileRepository {
             let path = MediaPath.avatar(userID: uid)
             state.media[path] = jpeg
             state.profiles[uid]?.avatarPath = path
+            state.profiles[uid]?.avatarVersion += 1
             if let coupleID = state.activeCoupleID(of: uid) { state.pendingEvents.append((coupleID, .spaceChanged)) }
             return state.profiles[uid]!
         }
@@ -208,6 +209,7 @@ extension LocalBackend: ProfileRepository {
         return try world.mutate { state, _ in
             state.media[MediaPath.avatar(userID: uid)] = nil
             state.profiles[uid]?.avatarPath = nil
+            state.profiles[uid]?.avatarVersion += 1
             return state.profiles[uid]!
         }
     }

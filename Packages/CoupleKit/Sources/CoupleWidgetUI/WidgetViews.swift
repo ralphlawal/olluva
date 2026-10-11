@@ -179,6 +179,78 @@ public struct MediumNoteWidgetView: View {
     }
 }
 
+// MARK: - Home Screen: large
+
+/// The note at close to full size, with who sent it above and a way to answer
+/// below. The card stays square, as it is everywhere else in the app.
+public struct LargeNoteWidgetView: View {
+    @Environment(\.colorScheme) private var scheme
+    private let snapshot: WidgetSnapshot
+    private let images: WidgetImages
+
+    public init(snapshot: WidgetSnapshot, images: WidgetImages = WidgetImages()) {
+        self.snapshot = snapshot
+        self.images = images
+    }
+
+    private var palette: Palette {
+        Palette(theme: Theme.find(snapshot.themeID), accentHex: snapshot.accentHex, scheme: scheme)
+    }
+
+    public var body: some View {
+        Group {
+            if let note = snapshot.note, snapshot.state == .note {
+                face(note)
+            } else if let copy = WidgetPlaceholderCopy(state: snapshot.state) {
+                WidgetPlaceholderView(copy: copy, palette: palette, compact: false)
+            }
+        }
+        .environment(\.palette, palette)
+    }
+
+    private func face(_ note: WidgetSnapshot.NoteSnapshot) -> some View {
+        let bold = snapshot.style == .bold
+        return ZStack {
+            (bold ? palette.accent : palette.canvas)
+            VStack(spacing: 12) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(snapshot.partnerName.isEmpty ? String(localized: "Your person") : snapshot.partnerName)
+                        .font(.system(.title3, design: .serif).weight(.semibold))
+                        .foregroundStyle(bold ? palette.onAccent : palette.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    if note.isUnseen {
+                        Text("New")
+                            .font(.caption2.weight(.bold))
+                            .textCase(.uppercase)
+                            .tracking(0.8)
+                            .foregroundStyle(bold ? palette.onAccent : palette.highlight)
+                    }
+                    Spacer(minLength: 0)
+                    Text(note.createdAt, style: .relative)
+                        .font(.caption)
+                        .foregroundStyle(bold ? palette.onAccent.opacity(0.8) : palette.inkSecondary)
+                        .lineLimit(1)
+                        .multilineTextAlignment(.trailing)
+                }
+
+                NoteCardView(content: note.content, photo: images.photo, drawing: images.drawing)
+                    .shadow(color: .black.opacity(0.14), radius: 8, y: 5)
+                    .rotationEffect(.degrees(snapshot.style == .minimal ? 0 : -1.5))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                HStack {
+                    Spacer(minLength: 0)
+                    Label("Reply", systemImage: "arrowshape.turn.up.left")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(bold ? palette.onAccent : palette.accent)
+                }
+            }
+            .padding(18)
+        }
+    }
+}
+
 // MARK: - Shared faces
 
 struct WidgetTextFace: View {

@@ -130,7 +130,14 @@ struct HomeView: View {
 
     private var header: some View {
         HStack(spacing: Space.sm) {
-            ProfileAvatar(profile: partner, size: 48)
+            // The two of you, your partner in front.
+            HStack(spacing: -14) {
+                ProfileAvatar(profile: partner, size: 48)
+                    .overlay(Circle().strokeBorder(palette.canvas, lineWidth: 2))
+                    .zIndex(1)
+                ProfileAvatar(profile: app.session.profile, size: 48)
+            }
+            .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(partner?.displayName ?? "")
                     .font(Typo.heading)

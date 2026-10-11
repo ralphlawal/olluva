@@ -10,10 +10,11 @@ struct ProfileRow: Decodable {
     let id: UUID
     let display_name: String
     let avatar_path: String?
+    let avatar_version: Int?
     let time_zone: String
 
     var model: Profile {
-        Profile(id: id, displayName: display_name, avatarPath: avatar_path, timeZone: time_zone)
+        Profile(id: id, displayName: display_name, avatarPath: avatar_path, avatarVersion: avatar_version ?? 0, timeZone: time_zone)
     }
 }
 

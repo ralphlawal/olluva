@@ -30,11 +30,13 @@ final class MediaStore {
     }
 
     /// A decoded image no larger than `maxPixel` on its longest side.
-    func image(path: String?, maxPixel: Int = 1400) async -> CGImage? {
+    /// `version` distinguishes successive files stored at one path (profile
+    /// pictures); everything else is written once and never changes.
+    func image(path: String?, maxPixel: Int = 1400, version: Int = 0) async -> CGImage? {
         guard let path else { return nil }
-        let key = "\(path)#\(maxPixel)" as NSString
+        let key = "\(path)#\(version)#\(maxPixel)" as NSString
         if let cached = memory.object(forKey: key) { return cached.image }
-        guard let data = await data(path: path) else { return nil }
+        guard let data = await data(path: path, version: version) else { return nil }
         let image = await Task.detached(priority: .userInitiated) {
             WidgetSnapshotStore.downsampledImage(from: data, maxPixel: maxPixel)
         }.value
@@ -44,11 +46,12 @@ final class MediaStore {
 
     /// The raw bytes, from disk if we have them, otherwise downloaded once
     /// however many views ask at the same time.
-    func data(path: String?) async -> Data? {
+    func data(path: String?, version: Int = 0) async -> Data? {
         guard let path else { return nil }
-        let file = fileURL(for: path)
+        let file = fileURL(for: path, version: version)
         if let data = try? Data(contentsOf: file) { return data }
-        if let running = inFlight[path] { return await running.value }
+        let flight = "\(path)#\(version)"
+        if let running = inFlight[flight] { return await running.value }
 
         let isAvatar = path.hasSuffix("/avatar.jpg")
         let task = Task<Data?, Never> { [backend] in
@@ -59,23 +62,17 @@ final class MediaStore {
                 return nil
             }
         }
-        inFlight[path] = task
+        inFlight[flight] = task
         let data = await task.value
-        inFlight[path] = nil
+        inFlight[flight] = nil
         if let data { write(data, to: file) }
         return data
     }
 
     /// Keeps a copy of something this device just uploaded, so it does not
     /// have to be downloaded straight back.
-    func prime(_ data: Data, for path: String) {
-        write(data, to: fileURL(for: path))
-    }
-
-    /// Avatars are mutable (same path, new picture), so drop the old copy.
-    func invalidate(path: String) {
-        try? FileManager.default.removeItem(at: fileURL(for: path))
-        memory.removeAllObjects()
+    func prime(_ data: Data, for path: String, version: Int = 0) {
+        write(data, to: fileURL(for: path, version: version))
     }
 
     func clear() {
@@ -86,8 +83,9 @@ final class MediaStore {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
-    private func fileURL(for path: String) -> URL {
-        directory.appendingPathComponent(path.replacingOccurrences(of: "/", with: "_"))
+    private func fileURL(for path: String, version: Int = 0) -> URL {
+        let name = path.replacingOccurrences(of: "/", with: "_")
+        return directory.appendingPathComponent(version == 0 ? name : "v\(version)_\(name)")
     }
 
     private func write(_ data: Data, to url: URL) {

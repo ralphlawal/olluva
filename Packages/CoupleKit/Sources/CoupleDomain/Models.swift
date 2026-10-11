@@ -6,13 +6,26 @@ public struct Profile: Identifiable, Codable, Equatable, Sendable {
     public let id: UUID
     public var displayName: String
     public var avatarPath: String?
+    /// Counts changes to the picture. The path never changes, so this is what
+    /// tells a cached copy that it is out of date.
+    public var avatarVersion: Int
     public var timeZone: String
 
-    public init(id: UUID, displayName: String, avatarPath: String? = nil, timeZone: String = "UTC") {
+    public init(id: UUID, displayName: String, avatarPath: String? = nil, avatarVersion: Int = 0, timeZone: String = "UTC") {
         self.id = id
         self.displayName = displayName
         self.avatarPath = avatarPath
+        self.avatarVersion = avatarVersion
         self.timeZone = timeZone
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        displayName = try container.decode(String.self, forKey: .displayName)
+        avatarPath = try container.decodeIfPresent(String.self, forKey: .avatarPath)
+        avatarVersion = try container.decodeIfPresent(Int.self, forKey: .avatarVersion) ?? 0
+        timeZone = try container.decode(String.self, forKey: .timeZone)
     }
 
     /// The single letter shown when there is no avatar.

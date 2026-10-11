@@ -50,8 +50,10 @@ struct NoteTimelineProvider: TimelineProvider {
     private func currentEntry(for family: WidgetFamily) -> NoteEntry {
         let snapshot = store?.load() ?? .signedOut
         // Lock Screen families draw no images; skip decoding them entirely.
-        let needsImages = family == .systemSmall || family == .systemMedium
-        let pixels = family == .systemSmall ? 500 : 700
+        let needsImages = family == .systemSmall || family == .systemMedium || family == .systemLarge
+        // Widgets run under a tight memory limit, so images are decoded no
+        // larger than the card each size actually draws.
+        let pixels = family == .systemSmall ? 500 : family == .systemLarge ? 900 : 700
         let images = needsImages ? WidgetImages(snapshot: snapshot, store: store, maxPixel: pixels) : WidgetImages()
         return NoteEntry(date: .now, snapshot: snapshot, images: images)
     }
@@ -80,7 +82,7 @@ struct LatestNoteWidget: Widget {
         }
         .configurationDisplayName("Latest note")
         .description("The newest note from your partner, right where you’ll see it.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
         .contentMarginsDisabled()
     }
 
@@ -104,6 +106,8 @@ struct LatestNoteWidgetView: View {
             switch family {
             case .systemMedium:
                 MediumNoteWidgetView(snapshot: entry.snapshot, images: entry.images)
+            case .systemLarge:
+                LargeNoteWidgetView(snapshot: entry.snapshot, images: entry.images)
             default:
                 SmallNoteWidgetView(snapshot: entry.snapshot, images: entry.images)
             }

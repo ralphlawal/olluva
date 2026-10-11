@@ -176,7 +176,7 @@ extension SupabaseRepositories: AuthRepository {
 extension SupabaseRepositories: ProfileRepository {
     func myProfile() async throws -> Profile {
         try await run {
-            let row: ProfileRow = try await client.from("profiles").select("id, display_name, avatar_path, time_zone")
+            let row: ProfileRow = try await client.from("profiles").select("id, display_name, avatar_path, avatar_version, time_zone")
                 .eq("id", value: try userID()).single().execute().value
             return row.model
         }
@@ -189,7 +189,7 @@ extension SupabaseRepositories: ProfileRepository {
             if let timeZone { changes["time_zone"] = timeZone }
             guard !changes.isEmpty else { return try await myProfile() }
             let row: ProfileRow = try await client.from("profiles").update(changes)
-                .eq("id", value: try userID()).select("id, display_name, avatar_path, time_zone").single().execute().value
+                .eq("id", value: try userID()).select("id, display_name, avatar_path, avatar_version, time_zone").single().execute().value
             return row.model
         }
     }
@@ -202,7 +202,7 @@ extension SupabaseRepositories: ProfileRepository {
                 path, data: jpeg, options: FileOptions(cacheControl: "0", contentType: "image/jpeg", upsert: true)
             )
             let row: ProfileRow = try await client.from("profiles").update(["avatar_path": path])
-                .eq("id", value: try userID()).select("id, display_name, avatar_path, time_zone").single().execute().value
+                .eq("id", value: try userID()).select("id, display_name, avatar_path, avatar_version, time_zone").single().execute().value
             return row.model
         }
     }
@@ -212,7 +212,7 @@ extension SupabaseRepositories: ProfileRepository {
             let id = try userID()
             _ = try? await client.storage.from(Self.avatarBucket).remove(paths: [MediaPath.avatar(userID: id)])
             let row: ProfileRow = try await client.from("profiles").update(["avatar_path": String?.none])
-                .eq("id", value: id).select("id, display_name, avatar_path, time_zone").single().execute().value
+                .eq("id", value: id).select("id, display_name, avatar_path, avatar_version, time_zone").single().execute().value
             return row.model
         }
     }
@@ -230,7 +230,7 @@ extension SupabaseRepositories: CoupleRepository {
             guard let space = spaces.first else { return .none }
 
             let members: [MemberRow] = try await client.from("couple_members")
-                .select("user_id, profile:profiles(id, display_name, avatar_path, time_zone)")
+                .select("user_id, profile:profiles(id, display_name, avatar_path, avatar_version, time_zone)")
                 .eq("couple_id", value: space.id).execute().value
             if let partner = members.first(where: { $0.user_id != me })?.profile {
                 return .paired(space.model, partner: partner.model)

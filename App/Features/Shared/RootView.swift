@@ -115,8 +115,8 @@ struct ProfileAvatar: View {
 
     var body: some View {
         AvatarView(initial: profile?.initial ?? "·", image: image, size: size)
-            .task(id: profile?.avatarPath) {
-                image = await app.media.image(path: profile?.avatarPath, maxPixel: 400)
+            .task(id: "\(profile?.avatarPath ?? "")#\(profile?.avatarVersion ?? 0)") {
+                image = await app.media.image(path: profile?.avatarPath, maxPixel: 400, version: profile?.avatarVersion ?? 0)
             }
     }
 }

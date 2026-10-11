@@ -249,9 +249,7 @@ struct ProfileEditView: View {
                     if app.session.profile?.avatarPath != nil {
                         Button("Remove photo") {
                             action.run {
-                                let path = app.session.profile?.avatarPath
                                 let profile = try await app.backend.profiles.removeAvatar()
-                                if let path { app.media.invalidate(path: path) }
                                 app.session.setProfile(profile)
                             }
                         }
@@ -285,12 +283,11 @@ struct ProfileEditView: View {
                       let jpeg = ImagePipeline.avatarJPEG(from: data)
                 else { throw AppError.mediaUnreadable }
                 let profile = try await app.backend.profiles.setAvatar(jpeg: jpeg)
+                // The new picture has a new version, so every view showing the
+                // old one reloads; keep the copy just uploaded for them.
                 if let path = profile.avatarPath {
-                    app.media.invalidate(path: path)
-                    app.media.prime(jpeg, for: path)
+                    app.media.prime(jpeg, for: path, version: profile.avatarVersion)
                 }
-                // Assign a changed value so views keyed on the path reload.
-                app.session.setProfile(Profile(id: profile.id, displayName: profile.displayName, avatarPath: nil, timeZone: profile.timeZone))
                 app.session.setProfile(profile)
             }
         }
