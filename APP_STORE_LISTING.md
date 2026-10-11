@@ -97,15 +97,16 @@ Not collected: location, contacts, browsing or search history, health, financial
 
 ## Screenshots
 
-In `store-screenshots/`, taken from the app with sample data: `6.3-inch/` at 1206 × 2622, which is the size App Store Connect's "iPhone with Dynamic Island (medium display)" slot takes, and `6.9-inch/` at 1320 × 2868. Suggested order and captions:
+Six images, each a headline over the app shown in a phone, in `store-screenshots/6.3-inch/` (1206 × 2622, the size App Store Connect's "iPhone with Dynamic Island (medium display)" slot takes) and `store-screenshots/6.9-inch/` (1320 × 2868). Upload them in file-name order.
 
-1. Today, with a note received: "Notes from your person, the moment they send them"
-2. Composer with styles: "Write it the way you mean it"
-3. Drawing: "Or draw it"
-4. Memories: "Keep the ones you love"
-5. Us, with dates: "Never miss a date that matters"
+1. Little notes from your person
+2. Right on their Home Screen (the widgets)
+3. Say it your way
+4. Or just draw it
+5. Keep the ones you love
+6. Never miss a date that matters
 
-Apple accepts plain screenshots; captions and device frames are optional and are not added yet.
+They are built by `scripts/make_store_screenshots.swift` from the plain captures in `store-screenshots/raw/`, which come from the UI tests with sample data.
 
 ## What is left before submitting
 
