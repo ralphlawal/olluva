@@ -47,7 +47,7 @@ Group display name · per product: reference name, display name (≤ 30), descri
 - ✅ Privacy, terms and support pages published from `site/` at https://ralphlawal.github.io/olluva/ (the app links to them)
 - ⏳ Legal review of the privacy policy and terms; add the operator's name and address
 - ⏳ Make hello@olluva.app able to receive mail: the site and the app list it, but the domain currently has no mail service (its MX record is a placeholder)
-- ⏳ Point www.olluva.app at the site and change `AppLinks.site`
+- ⏳ olluva.app: the Vercel project `olluva` now serves `site/` (live at https://olluva.vercel.app), but the domain itself is suspended at the registrar (nameservers `suspension*.mydomainprovider.com`). Once it resolves, change `AppLinks.site` to https://www.olluva.app/
 - ✅ In-app deletion (Settings → Delete everything), required by guideline 5.1.1(v)
 - ✅ No sign-up is required to use the app; Sign in with Apple is offered only as an optional backup
 - ✅ In-app data export

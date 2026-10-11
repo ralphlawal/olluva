@@ -1,6 +1,7 @@
 #if DEBUG
 import CoupleDomain
 import StoreKit
+import WidgetKit
 
 /// Development aid behind the `-probeProducts` launch argument: asks the store
 /// for the products every way it can and traces what comes back, so a device
@@ -12,6 +13,14 @@ final class StoreProbe: NSObject, SKProductsRequestDelegate {
 
     func run() {
         Diagnostics.trace("probe: canMakePayments \(AppStore.canMakePayments)")
+        WidgetCenter.shared.getCurrentConfigurations { result in
+            switch result {
+            case .success(let widgets):
+                Diagnostics.trace("probe: \(widgets.count) widgets placed: \(widgets.map { "\($0.kind)/\($0.family)" })")
+            case .failure(let error):
+                Diagnostics.trace("probe: widget configurations failed: \(String(describing: error))")
+            }
+        }
         let request = SKProductsRequest(productIdentifiers: Set(ProductConfiguration.productIDs))
         request.delegate = self
         self.request = request
