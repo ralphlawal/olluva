@@ -12,13 +12,15 @@ import { execFileSync } from 'node:child_process';
 import { createPrivateKey, sign, X509Certificate } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   APPLE_ROOT_CA_G3_SHA256,
   assertExpectedTransaction,
   JwsVerificationError,
   subscriptionRecord,
+  internals,
   verifyAppleJws,
 } from '../functions/_shared/jws.ts';
 import { notificationText } from '../functions/_shared/messages.ts';
@@ -63,11 +65,13 @@ function makeJws(payload, { x5c = chain.x5c, key = chain.leafKey, alg = 'ES256' 
   return `${head}.${body}.${signature.toString('base64url')}`;
 }
 
-const rejects = (fn, reason) => assert.throws(fn, (error) => {
+const isRejection = (reason) => (error) => {
   assert.ok(error instanceof JwsVerificationError, String(error));
   assert.equal(error.reason, reason);
   return true;
-});
+};
+const rejects = (fn, reason) => assert.throws(fn, isRejection(reason));
+const rejectsAsync = (fn, reason) => assert.rejects(async () => fn(), isRejection(reason));
 
 const transaction = {
   originalTransactionId: '1000000000000001',
@@ -93,53 +97,69 @@ describe('Apple JWS verification', () => {
     );
   });
 
-  test('a correctly signed transaction under the trusted root is accepted', () => {
-    const payload = verifyAppleJws(makeJws(transaction), { rootFingerprint: chain.rootFingerprint });
+  test('a correctly signed transaction under the trusted root is accepted', async () => {
+    const payload = await verifyAppleJws(makeJws(transaction), { rootFingerprint: chain.rootFingerprint });
     assert.deepEqual(payload, transaction);
   });
 
-  test('a valid chain under any root other than the pinned one is rejected', () => {
+  test('a valid chain under any root other than the pinned one is rejected', async () => {
     // No override: the function must insist on Apple's root.
-    rejects(() => verifyAppleJws(makeJws(transaction)), 'untrusted_root');
+    await rejectsAsync(() => verifyAppleJws(makeJws(transaction)), 'untrusted_root');
   });
 
-  test('a tampered payload is rejected', () => {
+  test('a tampered payload is rejected', async () => {
     const [head, , signature] = makeJws(transaction).split('.');
     const forged = b64url(JSON.stringify({ ...transaction, expiresDate: Date.UTC(2099, 0, 1) }));
-    rejects(() => verifyAppleJws(`${head}.${forged}.${signature}`, { rootFingerprint: chain.rootFingerprint }), 'signature');
+    await rejectsAsync(() => verifyAppleJws(`${head}.${forged}.${signature}`, { rootFingerprint: chain.rootFingerprint }), 'signature');
   });
 
-  test('a signature made with a key that is not the leaf\'s is rejected', () => {
+  test('a signature made with a key that is not the leaf\'s is rejected', async () => {
     const other = makeChain('other');
-    rejects(
+    await rejectsAsync(
       () => verifyAppleJws(makeJws(transaction, { key: other.leafKey }), { rootFingerprint: chain.rootFingerprint }),
       'signature',
     );
   });
 
-  test('a leaf that the presented intermediate did not sign is rejected', () => {
+  test('a leaf that the presented intermediate did not sign is rejected', async () => {
     const other = makeChain('swap');
     const mixed = [other.x5c[0], chain.x5c[1], chain.x5c[2]];
-    rejects(
+    await rejectsAsync(
       () => verifyAppleJws(makeJws(transaction, { x5c: mixed, key: other.leafKey }), { rootFingerprint: chain.rootFingerprint }),
       'leaf_signature',
     );
   });
 
-  test('an expired certificate is rejected', () => {
+  test('an expired certificate is rejected', async () => {
     const later = new Date(Date.now() + 365 * 86_400_000);
-    rejects(() => verifyAppleJws(makeJws(transaction), { rootFingerprint: chain.rootFingerprint, now: later }), 'certificate_expired');
+    await rejectsAsync(() => verifyAppleJws(makeJws(transaction), { rootFingerprint: chain.rootFingerprint, now: later }), 'certificate_expired');
   });
 
-  test('"alg: none", missing chains and garbage are rejected', () => {
+  test('"alg: none", missing chains and garbage are rejected', async () => {
     const unsigned = `${b64url(JSON.stringify({ alg: 'none' }))}.${b64url(JSON.stringify(transaction))}.`;
-    rejects(() => verifyAppleJws(unsigned), 'algorithm');
-    rejects(() => verifyAppleJws(makeJws(transaction, { alg: 'HS256' })), 'algorithm');
-    rejects(() => verifyAppleJws(makeJws(transaction, { x5c: chain.x5c.slice(0, 2) })), 'chain_length');
-    rejects(() => verifyAppleJws(makeJws(transaction, { x5c: ['AAAA', 'AAAA', 'AAAA'] })), 'certificate');
-    rejects(() => verifyAppleJws('not-a-jws'), 'format');
-    rejects(() => verifyAppleJws(undefined), 'format');
-    rejects(() => verifyAppleJws('!!.!!.!!'), 'header');
+    await rejectsAsync(() => verifyAppleJws(unsigned), 'algorithm');
+    await rejectsAsync(() => verifyAppleJws(makeJws(transaction, { alg: 'HS256' })), 'algorithm');
+    await rejectsAsync(() => verifyAppleJws(makeJws(transaction, { x5c: chain.x5c.slice(0, 2) })), 'chain_length');
+    await rejectsAsync(() => verifyAppleJws(makeJws(transaction, { x5c: ['AAAA', 'AAAA', 'AAAA'] })), 'certificate');
+    await rejectsAsync(() => verifyAppleJws('not-a-jws'), 'format');
+    await rejectsAsync(() => verifyAppleJws(undefined), 'format');
+    await rejectsAsync(() => verifyAppleJws('!!.!!.!!'), 'header');
+  });
+
+  test('Apple\'s real certificates are read and checked correctly', async () => {
+    // The throwaway chains above are P-256 throughout. Apple's are P-384 and
+    // signed with SHA-384, and carry the extensions the verifier insists on.
+    const load = (name) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', name));
+    const root = internals.parseCertificate(load('AppleRootCA-G3.cer'));
+    const intermediate = internals.parseCertificate(load('AppleWWDRCAG6.cer'));
+    assert.equal(root.curve.name, 'P-384');
+    assert.equal(root.notAfter.toISOString(), '2039-04-30T18:19:06.000Z');
+    assert.equal(await internals.isSignedBy(root, root), true);
+    assert.equal(await internals.isSignedBy(intermediate, root), true);
+    assert.equal(await internals.isSignedBy(root, intermediate), false);
+    assert.equal(intermediate.isAuthority, true);
+    assert.equal(intermediate.extensions.has(internals.OID.appleWwdrIntermediate), true);
+    assert.equal(intermediate.extensions.has(internals.OID.appleReceiptSigning), false);
   });
 
   test('transactions for another app, product or environment are rejected', () => {

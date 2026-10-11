@@ -25,11 +25,15 @@ export function serviceClient(): SupabaseClient {
 export async function authenticatedUserId(request: Request): Promise<string | null> {
   const header = request.headers.get("authorization") ?? "";
   if (!header.toLowerCase().startsWith("bearer ")) return null;
+  const token = header.slice("bearer ".length).trim();
+  if (!token) return null;
   const client = createClient(requireEnv("SUPABASE_URL"), requireEnv("SUPABASE_ANON_KEY"), {
-    global: { headers: { authorization: header } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data, error } = await client.auth.getUser();
+  // The token has to be passed explicitly: with no stored session, getUser()
+  // without an argument reports "no session" whatever header was sent. The
+  // auth server checks the signature and that the user still exists.
+  const { data, error } = await client.auth.getUser(token);
   return error || !data.user ? null : data.user.id;
 }
 

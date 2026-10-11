@@ -5,12 +5,17 @@
 //   1. The chain is leaf -> intermediate -> root, each signed by the next.
 //   2. The root is Apple Root CA - G3, pinned here by SHA-256 fingerprint.
 //   3. Every certificate is inside its validity period.
-//   4. The JWS signature verifies against the leaf's public key (ES256).
+//   4. When the root is Apple's, the leaf and intermediate carry the
+//      extensions Apple issues App Store signing certificates with.
+//   5. The JWS signature verifies against the leaf's public key (ES256).
+//
+// Certificates are parsed here and checked with WebCrypto. The runtime's own
+// X509Certificate class is deliberately not used: Supabase's Edge runtime does
+// not implement its `verify`, so code that passes under Node fails there.
 //
 // This module has no Deno- or Supabase-specific imports so that it can be
 // unit tested with Node (see supabase/tests/jws.test.js).
 
-import { createPublicKey, verify, X509Certificate } from "node:crypto";
 import { Buffer } from "node:buffer";
 
 /** SHA-256 fingerprint of Apple Root CA - G3 (valid until 30 April 2039). */
@@ -30,32 +35,215 @@ function fromBase64Url(value: string): Buffer {
   return Buffer.from(value.replace(/-/g, "+").replace(/_/g, "/"), "base64");
 }
 
-/** Converts a raw (r || s) ECDSA signature, as used by JWS, to DER. */
-function joseToDer(signature: Buffer): Buffer {
-  if (signature.length !== 64) throw new JwsVerificationError("signature_length");
-  const encodeInteger = (bytes: Buffer): Buffer => {
-    let start = 0;
-    while (start < bytes.length - 1 && bytes[start] === 0) start += 1;
-    let value = bytes.subarray(start);
-    if (value[0] & 0x80) value = Buffer.concat([Buffer.from([0]), value]);
-    return Buffer.concat([Buffer.from([0x02, value.length]), value]);
-  };
-  const r = encodeInteger(signature.subarray(0, 32));
-  const s = encodeInteger(signature.subarray(32));
-  return Buffer.concat([Buffer.from([0x30, r.length + s.length]), r, s]);
-}
-
 export interface VerifyOptions {
   /** Override the pinned root. For tests only. */
   rootFingerprint?: string;
   now?: Date;
 }
 
+function normaliseFingerprint(fingerprint: string): string {
+  return fingerprint.replace(/[^0-9a-f]/gi, "").toLowerCase();
+}
+
+// --- A minimal X.509 reader --------------------------------------------------
+// Only what the checks above need: the signed bytes, the signature and its
+// algorithm, the validity period, the public key, and the extensions.
+
+const OID = {
+  ecdsaSha256: "2a8648ce3d040302",
+  ecdsaSha384: "2a8648ce3d040303",
+  ecdsaSha512: "2a8648ce3d040304",
+  curveP256: "2a8648ce3d030107",
+  curveP384: "2b81040022",
+  basicConstraints: "551d13",
+  // 1.2.840.113635.100.6.11.1: an App Store receipt signing certificate.
+  appleReceiptSigning: "2a864886f76364060b01",
+  // 1.2.840.113635.100.6.2.1: the Apple Worldwide Developer Relations CA.
+  appleWwdrIntermediate: "2a864886f763640602" + "01",
+};
+
+const CURVES: Record<string, { name: "P-256" | "P-384"; size: number }> = {
+  [OID.curveP256]: { name: "P-256", size: 32 },
+  [OID.curveP384]: { name: "P-384", size: 48 },
+};
+
+const SIGNATURE_HASHES: Record<string, string> = {
+  [OID.ecdsaSha256]: "SHA-256",
+  [OID.ecdsaSha384]: "SHA-384",
+  [OID.ecdsaSha512]: "SHA-512",
+};
+
+interface Tlv {
+  tag: number;
+  start: number;
+  valueStart: number;
+  end: number;
+}
+
+function readTlv(der: Buffer, offset: number, limit: number): Tlv {
+  if (offset + 2 > limit) throw new JwsVerificationError("certificate");
+  const tag = der[offset];
+  let length = der[offset + 1];
+  let valueStart = offset + 2;
+  if (length & 0x80) {
+    const count = length & 0x7f;
+    if (count === 0 || count > 4 || valueStart + count > limit) throw new JwsVerificationError("certificate");
+    length = 0;
+    for (let index = 0; index < count; index += 1) length = length * 256 + der[valueStart + index];
+    valueStart += count;
+  }
+  const end = valueStart + length;
+  if (end > limit) throw new JwsVerificationError("certificate");
+  return { tag, start: offset, valueStart, end };
+}
+
+function expectTag(tlv: Tlv, tag: number): Tlv {
+  if (tlv.tag !== tag) throw new JwsVerificationError("certificate");
+  return tlv;
+}
+
+function parseTime(der: Buffer, tlv: Tlv): Date {
+  const text = der.subarray(tlv.valueStart, tlv.end).toString("latin1");
+  let match: RegExpMatchArray | null;
+  let year: number;
+  if (tlv.tag === 0x17 && (match = text.match(/^(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})Z$/))) {
+    year = Number(match[1]) + (Number(match[1]) >= 50 ? 1900 : 2000);
+  } else if (tlv.tag === 0x18 && (match = text.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})Z$/))) {
+    year = Number(match[1]);
+  } else {
+    throw new JwsVerificationError("certificate");
+  }
+  const [month, day, hour, minute, second] = match.slice(2).map(Number);
+  return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+}
+
+interface Certificate {
+  der: Buffer;
+  /** The bytes the issuer signed. */
+  signed: Buffer;
+  signatureHash: string;
+  /** DER-encoded ECDSA signature. */
+  signature: Buffer;
+  notBefore: Date;
+  notAfter: Date;
+  publicKey: Buffer;
+  curve: { name: "P-256" | "P-384"; size: number };
+  isAuthority: boolean;
+  extensions: Set<string>;
+}
+
+function parseCertificate(der: Buffer): Certificate {
+  const whole = expectTag(readTlv(der, 0, der.length), 0x30);
+  if (whole.end !== der.length) throw new JwsVerificationError("certificate");
+
+  const tbs = expectTag(readTlv(der, whole.valueStart, whole.end), 0x30);
+  const algorithm = expectTag(readTlv(der, tbs.end, whole.end), 0x30);
+  const algorithmOid = expectTag(readTlv(der, algorithm.valueStart, algorithm.end), 0x06);
+  const signatureHash = SIGNATURE_HASHES[der.subarray(algorithmOid.valueStart, algorithmOid.end).toString("hex")];
+  const signatureBits = expectTag(readTlv(der, algorithm.end, whole.end), 0x03);
+  if (!signatureHash || der[signatureBits.valueStart] !== 0) throw new JwsVerificationError("certificate");
+
+  let field = readTlv(der, tbs.valueStart, tbs.end);
+  if (field.tag === 0xa0) field = readTlv(der, field.end, tbs.end); // version
+  expectTag(field, 0x02); // serial number
+  field = expectTag(readTlv(der, field.end, tbs.end), 0x30); // signature algorithm
+  field = expectTag(readTlv(der, field.end, tbs.end), 0x30); // issuer
+  const validity = expectTag(readTlv(der, field.end, tbs.end), 0x30);
+  const notBefore = readTlv(der, validity.valueStart, validity.end);
+  const notAfter = readTlv(der, notBefore.end, validity.end);
+  field = expectTag(readTlv(der, validity.end, tbs.end), 0x30); // subject
+  const keyInfo = expectTag(readTlv(der, field.end, tbs.end), 0x30);
+  const keyAlgorithm = expectTag(readTlv(der, keyInfo.valueStart, keyInfo.end), 0x30);
+  const keyType = expectTag(readTlv(der, keyAlgorithm.valueStart, keyAlgorithm.end), 0x06);
+  const curveOid = expectTag(readTlv(der, keyType.end, keyAlgorithm.end), 0x06);
+  const curve = CURVES[der.subarray(curveOid.valueStart, curveOid.end).toString("hex")];
+  if (!curve) throw new JwsVerificationError("certificate");
+
+  const extensions = new Set<string>();
+  let isAuthority = false;
+  let offset = keyInfo.end;
+  while (offset < tbs.end) {
+    const optional = readTlv(der, offset, tbs.end);
+    offset = optional.end;
+    if (optional.tag !== 0xa3) continue;
+    const list = expectTag(readTlv(der, optional.valueStart, optional.end), 0x30);
+    let position = list.valueStart;
+    while (position < list.end) {
+      const extension = expectTag(readTlv(der, position, list.end), 0x30);
+      position = extension.end;
+      const oid = expectTag(readTlv(der, extension.valueStart, extension.end), 0x06);
+      const id = der.subarray(oid.valueStart, oid.end).toString("hex");
+      extensions.add(id);
+      if (id !== OID.basicConstraints) continue;
+      let value = readTlv(der, oid.end, extension.end);
+      if (value.tag === 0x01) value = readTlv(der, value.end, extension.end); // critical flag
+      expectTag(value, 0x04);
+      const constraints = expectTag(readTlv(der, value.valueStart, value.end), 0x30);
+      if (constraints.end > constraints.valueStart) {
+        const first = readTlv(der, constraints.valueStart, constraints.end);
+        isAuthority = first.tag === 0x01 && der[first.valueStart] !== 0;
+      }
+    }
+  }
+
+  return {
+    der,
+    signed: der.subarray(tbs.start, tbs.end),
+    signatureHash,
+    signature: der.subarray(signatureBits.valueStart + 1, signatureBits.end),
+    notBefore: parseTime(der, notBefore),
+    notAfter: parseTime(der, notAfter),
+    publicKey: der.subarray(keyInfo.start, keyInfo.end),
+    curve,
+    isAuthority,
+    extensions,
+  };
+}
+
+/** Converts a DER ECDSA signature to the fixed-width (r || s) form WebCrypto takes. */
+function derToRaw(signature: Buffer, size: number): Buffer | null {
+  try {
+    const sequence = expectTag(readTlv(signature, 0, signature.length), 0x30);
+    const r = expectTag(readTlv(signature, sequence.valueStart, sequence.end), 0x02);
+    const s = expectTag(readTlv(signature, r.end, sequence.end), 0x02);
+    const raw = Buffer.alloc(size * 2);
+    for (const [index, part] of [r, s].entries()) {
+      let start = part.valueStart;
+      while (start < part.end - 1 && signature[start] === 0) start += 1;
+      const length = part.end - start;
+      if (length > size) return null;
+      signature.copy(raw, size * (index + 1) - length, start, part.end);
+    }
+    return raw;
+  } catch {
+    return null;
+  }
+}
+
+async function verifyWith(signer: Certificate, hash: string, rawSignature: Buffer, data: Buffer): Promise<boolean> {
+  try {
+    const key = await crypto.subtle.importKey(
+      "spki", signer.publicKey, { name: "ECDSA", namedCurve: signer.curve.name }, false, ["verify"],
+    );
+    return await crypto.subtle.verify({ name: "ECDSA", hash }, key, rawSignature, data);
+  } catch {
+    return false;
+  }
+}
+
+async function isSignedBy(certificate: Certificate, issuer: Certificate): Promise<boolean> {
+  const raw = derToRaw(certificate.signature, issuer.curve.size);
+  return raw !== null && await verifyWith(issuer, certificate.signatureHash, raw, certificate.signed);
+}
+
+/** Exposed for tests only, so the reader can be checked against Apple's real certificates. */
+export const internals = { parseCertificate, isSignedBy, OID };
+
 /**
  * Verifies a compact JWS and returns its decoded payload.
  * Throws JwsVerificationError on any failure; never returns unverified data.
  */
-export function verifyAppleJws<T = Record<string, unknown>>(jws: string, options: VerifyOptions = {}): T {
+export async function verifyAppleJws<T = Record<string, unknown>>(jws: string, options: VerifyOptions = {}): Promise<T> {
   const parts = typeof jws === "string" ? jws.split(".") : [];
   if (parts.length !== 3) throw new JwsVerificationError("format");
   const [headerPart, payloadPart, signaturePart] = parts;
@@ -69,33 +257,42 @@ export function verifyAppleJws<T = Record<string, unknown>>(jws: string, options
   if (header.alg !== "ES256") throw new JwsVerificationError("algorithm");
   if (!Array.isArray(header.x5c) || header.x5c.length !== 3) throw new JwsVerificationError("chain_length");
 
-  let chain: X509Certificate[];
+  let chain: Certificate[];
   try {
-    chain = header.x5c.map((der) => new X509Certificate(Buffer.from(der, "base64")));
+    chain = header.x5c.map((der) => parseCertificate(Buffer.from(der, "base64")));
   } catch {
     throw new JwsVerificationError("certificate");
   }
   const [leaf, intermediate, root] = chain;
 
-  const pinned = options.rootFingerprint ?? APPLE_ROOT_CA_G3_SHA256;
-  if (root.fingerprint256 !== pinned) throw new JwsVerificationError("untrusted_root");
+  const rootDigest = Buffer.from(await crypto.subtle.digest("SHA-256", root.der)).toString("hex");
+  if (rootDigest !== normaliseFingerprint(options.rootFingerprint ?? APPLE_ROOT_CA_G3_SHA256)) {
+    throw new JwsVerificationError("untrusted_root");
+  }
 
   const now = options.now ?? new Date();
   for (const certificate of chain) {
-    if (now < new Date(certificate.validFrom) || now > new Date(certificate.validTo)) {
+    if (now < certificate.notBefore || now > certificate.notAfter) {
       throw new JwsVerificationError("certificate_expired");
     }
   }
 
-  if (!root.verify(root.publicKey)) throw new JwsVerificationError("root_signature");
-  if (!intermediate.verify(root.publicKey)) throw new JwsVerificationError("intermediate_signature");
-  if (!leaf.verify(intermediate.publicKey)) throw new JwsVerificationError("leaf_signature");
-  if (!intermediate.ca) throw new JwsVerificationError("intermediate_not_ca");
+  if (!await isSignedBy(root, root)) throw new JwsVerificationError("root_signature");
+  if (!await isSignedBy(intermediate, root)) throw new JwsVerificationError("intermediate_signature");
+  if (!await isSignedBy(leaf, intermediate)) throw new JwsVerificationError("leaf_signature");
+  if (!intermediate.isAuthority) throw new JwsVerificationError("intermediate_not_ca");
 
+  // Apple's root signs many things. Only certificates issued for App Store
+  // signing may vouch for a transaction.
+  if (options.rootFingerprint === undefined) {
+    if (!intermediate.extensions.has(OID.appleWwdrIntermediate)) throw new JwsVerificationError("intermediate_purpose");
+    if (!leaf.extensions.has(OID.appleReceiptSigning)) throw new JwsVerificationError("leaf_purpose");
+  }
+
+  const signature = fromBase64Url(signaturePart);
+  if (signature.length !== 64 || leaf.curve.name !== "P-256") throw new JwsVerificationError("signature_length");
   const signedData = Buffer.from(`${headerPart}.${payloadPart}`, "utf8");
-  const signature = joseToDer(fromBase64Url(signaturePart));
-  const key = createPublicKey(leaf.publicKey.export({ type: "spki", format: "pem" }));
-  if (!verify("sha256", signedData, key, signature)) throw new JwsVerificationError("signature");
+  if (!await verifyWith(leaf, "SHA-256", signature, signedData)) throw new JwsVerificationError("signature");
 
   try {
     return JSON.parse(fromBase64Url(payloadPart).toString("utf8")) as T;

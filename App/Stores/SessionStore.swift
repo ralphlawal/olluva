@@ -162,15 +162,11 @@ final class SessionStore {
         do {
             try await backend.auth.deleteAccount()
         } catch {
-            let failure = appError(from: error)
-            // Deleting the account ends the session, and other work in flight
-            // (a live refresh, say) can notice that first. Being told "you are
-            // signed out" while deleting is the expected ending, not a failure;
-            // signing in again would show whether the account still exists.
-            guard failure == .sessionExpired else {
-                userInitiatedSignOut = false
-                throw failure
-            }
+            // Every failure is a failure, including being told "not signed
+            // in": the server refused, so nothing was deleted, and saying
+            // otherwise would leave the person's data behind unknowingly.
+            userInitiatedSignOut = false
+            throw appError(from: error)
         }
         await apply(.signedOut)
     }

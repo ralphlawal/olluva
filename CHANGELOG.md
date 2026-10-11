@@ -19,6 +19,10 @@ All notable changes to this project are recorded here. Format: [Keep a Changelog
 - The product is named **Olluva**. Invitation and widget links use the `olluva://` scheme, and the app's legal and support links point at the public site (`site/`, published with GitHub Pages).
 
 ### Fixed
+- **Signed-in calls to Edge Functions were always refused.** `verify-purchase` and `delete-account` read the caller's token in a way that never works without a stored session, so no purchase could be recorded and "Delete everything" removed nothing on the server while the app reported success. The app no longer treats "not signed in" during deletion as success.
+- **Apple's signature could not be checked on the server.** Supabase's Edge runtime does not implement `X509Certificate.verify`; the chain is now parsed and verified with WebCrypto, and the leaf and intermediate must carry Apple's App Store signing extensions.
+- **A subscription could not be restored by a new identity.** It now follows the device holding the Apple purchase (ADR 0005).
+- A phone that had been run from Xcode with the local StoreKit file stayed in Xcode's test store and could not see real products; the run scheme no longer uses that file.
 - The push environment reported to the server now comes from how the build was signed (its provisioning profile), not its configuration. A Release build run from Xcode used to register a development token as `production`, which would have stopped notifications and widget updates.
 - A push token can only be registered under one environment; registering it again replaces the other copy. Previously a rejected duplicate removed the working registration too.
 

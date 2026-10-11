@@ -6,7 +6,7 @@ Four suites. Each can be run by itself; none needs network access, Docker, or an
 
 | Suite | Runs on | Tests | Result |
 | --- | --- | --- | --- |
-| Database security and Edge Function logic | Node 24 + embedded Postgres 17 | 113 | 113 passed |
+| Database security and Edge Function logic | Node 24 + embedded Postgres 17 | 115 | 115 passed |
 | Swift package (`CoupleKit`) | macOS, `swift test` | 98 | 97 passed, 1 skipped (live-server test, needs credentials) |
 | App unit tests | iPhone 17 simulator, iOS 26.5 | 55 | 48 passed, **7 skipped** |
 | UI tests | iPhone 17 simulator, iOS 26.5 | 27 | 27 passed |
@@ -19,7 +19,7 @@ Builds: Debug and Release both build for the simulator, including the widget ext
 Two suites talk to the real Supabase project. Both need only the publishable key, both create anonymous identities and rows, and both are skipped or not run by default.
 
 ```sh
-# 36 checks through the public API, as an attacker would reach it
+# 47 checks through the public API, as an attacker would reach it
 cd supabase/tests
 SUPABASE_HOST=<ref>.supabase.co SUPABASE_KEY=<publishable key> node live-check.mjs
 
@@ -27,7 +27,7 @@ SUPABASE_HOST=<ref>.supabase.co SUPABASE_KEY=<publishable key> node live-check.m
 cd Packages/CoupleKit
 SUPABASE_HOST=<ref>.supabase.co SUPABASE_KEY=<publishable key> swift test --filter CoupleSupabaseLiveTests
 ```
-Last run 10 October 2026 against the `olluva` project: 36 of 36, and the client test passing. The client test has found two real bugs, both fixed: paging back through notes returned the boundary note twice, and restarting the live connection for the same space (which the app does when a partner joins) silently stopped live updates.
+Last run 11 October 2026 against the `olluva` project: 47 of 47 (the client test last passed on 10 October). The checks now call `verify-purchase` and `delete-account` as a signed-in person and delete their own identities at the end; before that, nothing exercised those functions on the real runtime, which hid two faults that the local tests could not see (see CHANGELOG). The client test has found two real bugs, both fixed: paging back through notes returned the boundary note twice, and restarting the live connection for the same space (which the app does when a partner joins) silently stopped live updates.
 
 To remove what they create without touching real users (SQL editor, as an administrator):
 ```sql

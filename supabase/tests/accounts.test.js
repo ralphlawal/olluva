@@ -68,7 +68,9 @@ describe('entitlements', () => {
     )).then((r) => r.rows[0].r);
 
     assert.equal(await record(a, 'active', `now() + interval '1 year'`), 'recorded');
-    assert.equal(await record(b, 'active', `now() + interval '1 year'`), 'owned_by_other_account');
+    // A server notification naming someone else never changes who owns it.
+    assert.equal(await record(b, 'active', `now() + interval '1 year'`), 'updated');
+    assert.equal((await db.call(a, 'select public.get_entitlement()')).source, 'self');
     assert.equal((await db.call(b, 'select public.get_entitlement()')).source, 'partner');
 
     await db.query(a, `select public.set_couple_theme('dusk', '#AA5577')`);
@@ -179,7 +181,39 @@ describe('notifications', () => {
     assert.deepEqual(await environments(), ['production']);
   });
 
+  test('a purchase follows the device that holds it, and covers one identity at a time', async () => {
+    const first = await db.createCouple('Ada', 'Ben');
+    const second = await db.createCouple('Ada again', 'Cy');
+    const claim = (user) => db.asService((q) => q(
+      `select public.claim_subscription('otid-claim', $1, 'premium.yearly', 'active', now() + interval '1 year', true, 'Sandbox', 'tx') as r`, [user],
+    )).then((r) => r.rows[0].r);
+    const premium = async (user) => (await db.call(user, 'select public.get_entitlement()')).is_premium;
+
+    assert.equal(await claim(first.a), 'recorded');
+    assert.equal(await premium(first.b), true);
+
+    // The same person starts over with a new identity and restores.
+    assert.equal(await claim(second.a), 'transferred');
+    assert.equal(await premium(second.a), true);
+    assert.equal(await premium(second.b), true);
+    assert.equal(await premium(first.a), false);
+    assert.equal(await premium(first.b), false);
+    assert.equal(await claim(second.a), 'updated');
+    assert.equal((await db.admin(`select count(*)::int as n from public.subscriptions where original_transaction_id = 'otid-claim'`)).rows[0].n, 1);
+
+    // A notification for an identity that no longer exists opens nothing.
+    const gone = '00000000-0000-4000-8000-000000000001';
+    const notify = await db.asService((q) => q(
+      `select public.record_subscription('otid-orphan', $1, 'premium.yearly', 'active', now() + interval '1 year', true, 'Sandbox', 'tx') as r`, [gone],
+    ));
+    assert.equal(notify.rows[0].r, 'unknown_owner');
+
+    // Nobody but trusted server code can claim.
+    await db.rejects(first.a, `select public.claim_subscription('otid-x', $1, 'p', 'active', now(), true, 'Sandbox', 'tx')`, [first.a], /permission denied/);
+  });
+
   test('pairing and unlinking notify the other person only', async () => {
+
     const { a, b, coupleId } = await db.createCouple();
     const outbox = async (user) => (await db.admin('select category, payload from public.notification_outbox where user_id = $1 order by id', [user])).rows;
     assert.deepEqual((await outbox(a)).map((r) => [r.category, r.payload.event]), [['pairing', 'accepted']]);

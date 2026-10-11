@@ -26,6 +26,17 @@ final class StoreProbe: NSObject, SKProductsRequestDelegate {
             } catch {
                 Diagnostics.trace("probe: app transaction failed: \(String(describing: error))")
             }
+            var held = 0
+            for await entitlement in Transaction.currentEntitlements {
+                held += 1
+                switch entitlement {
+                case .verified(let t):
+                    Diagnostics.trace("probe: entitlement verified \(t.productID) environment \(t.environment.rawValue) owner \(t.appAccountToken?.uuidString.lowercased().prefix(8) ?? "none") bought \(t.originalPurchaseDate.formatted(.iso8601))")
+                case .unverified(let t, let error):
+                    Diagnostics.trace("probe: entitlement UNVERIFIED \(t.productID) environment \(t.environment.rawValue) \(String(describing: error))")
+                }
+            }
+            Diagnostics.trace("probe: \(held) current entitlements")
             for id in ProductConfiguration.productIDs {
                 let found = (try? await Product.products(for: [id]).count) ?? -1
                 Diagnostics.trace("probe: \(id) -> \(found)")

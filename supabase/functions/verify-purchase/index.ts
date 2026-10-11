@@ -4,8 +4,7 @@
 // nothing in the request except Apple's signature:
 //   * the caller is identified by their access token;
 //   * the transaction must verify against Apple's certificate chain;
-//   * it must be for this app and one of our products;
-//   * if it carries an appAccountToken, that must be the caller.
+//   * it must be for this app and one of our products.
 import { authenticatedUserId, json, log, requireEnv, serviceClient } from "../_shared/http.ts";
 import {
   type AppleTransaction,
@@ -31,7 +30,7 @@ Deno.serve(async (request) => {
 
   let transaction: AppleTransaction;
   try {
-    transaction = verifyAppleJws<AppleTransaction>(jws);
+    transaction = await verifyAppleJws<AppleTransaction>(jws);
     assertExpectedTransaction(transaction, {
       bundleId: requireEnv("APPLE_BUNDLE_ID"),
       productIds: requireEnv("APPLE_PRODUCT_IDS").split(",").map((id) => id.trim()),
@@ -40,18 +39,19 @@ Deno.serve(async (request) => {
       allowTestEnvironments: Deno.env.get("APPLE_ALLOW_SANDBOX") === "true",
     });
   } catch (error) {
-    log("purchase_rejected", { reason: error instanceof JwsVerificationError ? error.reason : "unknown" });
+    // An unexpected error here is a fault in this function, not in the
+    // transaction. Its text comes from the runtime and holds no user data.
+    const detail = error instanceof JwsVerificationError ? null : String(error).slice(0, 160);
+    log("purchase_rejected", { reason: error instanceof JwsVerificationError ? error.reason : "unknown", detail });
     return json({ error: "verification_failed" }, 400);
   }
 
   const record = subscriptionRecord(transaction, null, new Date());
-  // A purchase bound to a different account cannot be claimed by this one.
-  if (record.userId !== null && record.userId !== userId) {
-    log("purchase_rejected", { reason: "account_mismatch" });
-    return json({ error: "owned_by_other_account" }, 409);
-  }
-
-  const { data, error } = await serviceClient().rpc("record_subscription", {
+  // The caller is holding a transaction Apple signed, so the subscription is
+  // theirs, whichever identity first presented it: identities are replaced on
+  // reinstall, an Apple ID's purchase is not. Claiming it moves it; it never
+  // covers two identities at once.
+  const { data, error } = await serviceClient().rpc("claim_subscription", {
     p_original_transaction_id: record.originalTransactionId,
     p_user: userId,
     p_product_id: record.productId,
@@ -65,8 +65,6 @@ Deno.serve(async (request) => {
     log("purchase_record_failed", { code: error.code ?? null });
     return json({ error: "record_failed" }, 500);
   }
-  if (data === "owned_by_other_account") return json({ error: "owned_by_other_account" }, 409);
-
-  log("purchase_recorded", { status: record.status, environment: record.environment });
+  log("purchase_recorded", { status: record.status, environment: record.environment, outcome: String(data) });
   return json({ ok: true, status: record.status });
 });

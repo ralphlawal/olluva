@@ -33,15 +33,15 @@ Deno.serve(async (request) => {
   if (typeof signedPayload !== "string") return json({ error: "invalid_body" }, 400);
 
   try {
-    const notification = verifyAppleJws<NotificationPayload>(signedPayload);
+    const notification = await verifyAppleJws<NotificationPayload>(signedPayload);
     const signedTransaction = notification.data?.signedTransactionInfo;
     // Some notification types (e.g. TEST) carry no transaction. Acknowledge them.
     if (!signedTransaction) return json({ ok: true });
 
     // The inner documents are signed separately and are verified separately.
-    const transaction = verifyAppleJws<AppleTransaction>(signedTransaction);
+    const transaction = await verifyAppleJws<AppleTransaction>(signedTransaction);
     const renewal = notification.data?.signedRenewalInfo
-      ? verifyAppleJws<AppleRenewalInfo>(notification.data.signedRenewalInfo)
+      ? await verifyAppleJws<AppleRenewalInfo>(notification.data.signedRenewalInfo)
       : null;
 
     assertExpectedTransaction(transaction, {

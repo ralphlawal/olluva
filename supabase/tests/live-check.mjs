@@ -183,5 +183,22 @@ const exported = await rpc(one.a, 'export_my_data');
 check('export still returns what the person wrote', (exported.json?.notes ?? []).some((n) => n.body === 'live check: ours'), exported.text.slice(0, 120));
 check('export does not include what the partner wrote', !exported.text.includes('live check: theirs'));
 
+console.log('Edge Functions');
+const purchaseNoToken = await call('/functions/v1/verify-purchase', { method: 'POST', body: { jws: 'x' } });
+check('verify-purchase: no token is refused', purchaseNoToken.status === 401, `status ${purchaseNoToken.status}`);
+const purchaseBogus = await call('/functions/v1/verify-purchase', { method: 'POST', token: one.a.token, body: { jws: 'x' } });
+check('verify-purchase: a signed-in caller is recognised, and a forged transaction is rejected',
+  purchaseBogus.status === 400 && purchaseBogus.json?.error === 'verification_failed', `status ${purchaseBogus.status} ${purchaseBogus.text}`);
+const entitlementAfter = await rpc(one.a, 'get_entitlement');
+check('a rejected transaction grants nothing', entitlementAfter.json?.is_premium === false, entitlementAfter.text);
+// Deleting for real: it is the only proof the function recognises its caller,
+// and it leaves the project without this run's identities.
+for (const person of [one.a, one.b, two.a, two.b]) {
+  const removed = await call('/functions/v1/delete-account', { method: 'POST', token: person.token });
+  check('delete-account: a signed-in caller is deleted', removed.status === 200, `status ${removed.status} ${removed.text}`);
+  const after = await call('/functions/v1/verify-purchase', { method: 'POST', token: person.token, body: { jws: 'x' } });
+  check('delete-account: the deleted identity is no longer recognised', after.status === 401, `status ${after.status}`);
+}
+
 console.log(`\n${passed} passed, ${failures.length} failed`);
 if (failures.length) { console.log(failures.map((f) => ` - ${f}`).join('\n')); process.exit(1); }
