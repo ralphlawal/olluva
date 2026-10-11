@@ -99,7 +99,7 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Space.lg) {
                     header
-                    if app.backend.isDemo { demoBanner }
+                    if app.backend.isDemo, !ProcessInfo.processInfo.arguments.contains("-storeScreenshots") { demoBanner }
                     hero
                     composeActions
                     if !app.notes.pending.isEmpty { pendingSection }

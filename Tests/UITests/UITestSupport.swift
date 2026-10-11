@@ -10,6 +10,8 @@ extension XCUIApplication {
     static func launched(_ scenario: Scenario, extraArguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-uiTesting", "-demoScenario", scenario.rawValue] + extraArguments
+        // For App Store screenshots: the sample data without the demo notice.
+        if ProcessInfo.processInfo.environment["STORE_SCREENSHOTS"] == "1" { app.launchArguments.append("-storeScreenshots") }
         app.launch()
         return app
     }
