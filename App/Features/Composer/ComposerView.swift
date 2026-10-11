@@ -187,6 +187,26 @@ struct ComposerView: View {
 
     // MARK: - The note
 
+    /// Plays the chosen effect over the card for a moment, so the sender sees
+    /// what their partner will.
+    private struct EffectPreview: View {
+        let effect: NoteStyle.Effect?
+        @State private var playing: NoteStyle.Effect?
+
+        var body: some View {
+            ZStack {
+                if let playing { NoteEffectView(effect: playing).id(playing) }
+            }
+            .task(id: effect) {
+                playing = nil
+                guard let effect else { return }
+                playing = effect
+                try? await Task.sleep(for: .seconds(NoteEffectView.duration + 0.2))
+                playing = nil
+            }
+        }
+    }
+
     private func canvas(_ model: ComposerModel) -> some View {
         @Bindable var model = model
         return GeometryReader { proxy in
@@ -198,7 +218,7 @@ struct ComposerView: View {
                 )
                 textLayer(model, side: side)
                 DrawingCanvas(
-                    drawing: $model.drawing, tool: model.drawingTool, inkHex: Ink.find(model.drawingInk).hex,
+                    drawing: $model.drawing, tool: model.drawingTool, inkHex: model.drawingCustomHex ?? Ink.find(model.drawingInk).hex,
                     width: model.strokeWidth, isActive: model.tool == .draw, controller: controller,
                     onChange: { model.drawingChanged() }
                 )
@@ -209,6 +229,7 @@ struct ComposerView: View {
                 if model.isLoadingPhoto {
                     ProgressView().controlSize(.large)
                 }
+                EffectPreview(effect: model.content.style.effect)
             }
             .frame(width: side, height: side)
             .clipShape(RoundedRectangle(cornerRadius: Radius.paper, style: .continuous))
@@ -249,8 +270,10 @@ struct ComposerView: View {
             // A real line of text rather than the field's own prompt, which
             // cannot wrap and gets cut off at this size.
             if model.isEmpty, model.tool == .text {
-                Text("Write something…")
-                    .font(NoteFont.font(model.content.style.typeface, size: side * 0.085))
+                Text(model.question ?? String(localized: "Write something…"))
+                    .font(NoteFont.font(model.content.style.typeface, size: side * (model.question == nil ? 0.085 : 0.066)))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, side * 0.09)
                     .foregroundStyle(ink.opacity(0.35))
                     .accessibilityHidden(true)
             }
@@ -443,6 +466,8 @@ struct DrawTray: View {
     var body: some View {
         VStack(spacing: Space.sm) {
             HStack(spacing: Space.xs) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Space.xs) {
                 ForEach(DrawingTool.allCases, id: \.self) { tool in
                     let locked = !EntitlementRules.canUse(tool, with: app.entitlement)
                     Button {
@@ -464,6 +489,9 @@ struct DrawTray: View {
                     .accessibilityAddTraits(model.drawingTool == tool ? .isSelected : [])
                     .accessibilityIdentifier("draw.tool.\(tool.rawValue)")
                 }
+                }
+                .padding(.vertical, 2)
+                }
                 Spacer(minLength: Space.xs)
                 ForEach(Self.widths, id: \.self) { width in
                     Button {
@@ -484,9 +512,14 @@ struct DrawTray: View {
             HStack(spacing: Space.xs) {
                 SwatchRow(
                     items: Ink.all.map { SwatchItem(id: $0.id, hex: $0.hex, isLocked: !EntitlementRules.canUse($0, with: app.entitlement)) },
-                    selection: model.drawingInk,
+                    selection: model.drawingCustomHex == nil ? model.drawingInk : "",
                     label: { String(localized: "Ink \($0)") }
-                ) { id in model.drawingInk = id }
+                ) { id in
+                    model.drawingInk = id
+                    model.drawingCustomHex = nil
+                }
+
+                customColour
 
                 Button { controller.undo() } label: { Image(systemName: "arrow.uturn.backward") }
                     .frame(width: Size.touch, height: Size.touch)
@@ -504,6 +537,100 @@ struct DrawTray: View {
                     .padding(.trailing, Space.xs)
             }
             .foregroundStyle(palette.ink)
+        }
+    }
+}
+
+extension DrawTray {
+    /// Any colour at all, for drawing. Premium; shows the paywall otherwise.
+    @ViewBuilder
+    var customColour: some View {
+        if app.entitlement.isPremium {
+            ColorPicker(
+                "Any colour",
+                selection: Binding(
+                    get: { Color(hex: model.drawingCustomHex ?? Ink.find(model.drawingInk).hex) },
+                    set: { model.drawingCustomHex = $0.hexString }
+                ),
+                supportsOpacity: false
+            )
+            .labelsHidden()
+            .frame(width: Size.touch, height: Size.touch)
+            .accessibilityIdentifier("draw.colour")
+        } else {
+            Button {
+                app.router.isShowingPaywall = true
+            } label: {
+                Circle()
+                    .fill(AngularGradient(colors: [.red, .orange, .yellow, .green, .blue, .purple, .red], center: .center))
+                    .frame(width: 30, height: 30)
+                    .frame(width: Size.touch, height: Size.touch)
+                    .overlay(alignment: .topTrailing) { PremiumMark() }
+            }
+            .accessibilityLabel(Text("Any colour"))
+            .accessibilityHint(Text("Premium"))
+        }
+    }
+}
+
+extension Color {
+    /// `#RRGGBB` in sRGB, the form inks are stored in.
+    var hexString: String {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        UIColor(self).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        let clamp = { (value: CGFloat) in Int((min(max(value, 0), 1) * 255).rounded()) }
+        return String(format: "#%02X%02X%02X", clamp(red), clamp(green), clamp(blue))
+    }
+}
+
+enum NoteEffectChoice: String, CaseIterable {
+    case none, hearts, confetti, sparkles
+
+    var effect: NoteStyle.Effect? { NoteStyle.Effect(rawValue: rawValue) }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .none: "Nothing"
+        case .hearts: "Hearts"
+        case .confetti: "Confetti"
+        case .sparkles: "Sparkles"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .none: "circle.slash"
+        case .hearts: "heart.fill"
+        case .confetti: "party.popper.fill"
+        case .sparkles: "sparkles"
+        }
+    }
+}
+
+extension NoteStyle.Typeface {
+    var title: LocalizedStringKey {
+        switch self {
+        case .hand: "Handwritten"
+        case .serif: "Serif"
+        case .rounded: "Rounded"
+        case .typewriter: "Typewriter"
+        case .script: "Script"
+        case .marker: "Marker"
+        case .casual: "Casual"
+        }
+    }
+}
+
+extension Sticker.Pack {
+    var title: LocalizedStringKey {
+        switch self {
+        case .love: "Love"
+        case .cute: "Cute"
+        case .food: "Food"
+        case .mood: "Mood"
+        case .celebrate: "Celebrate"
+        case .places: "Places"
+        case .classic: "Classic"
         }
     }
 }
@@ -575,17 +702,40 @@ struct StyleTray: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.sm) {
-            Picker("Lettering", selection: $model.content.style.typeface) {
-                Text("Handwritten").tag(NoteStyle.Typeface.hand)
-                Text("Serif").tag(NoteStyle.Typeface.serif)
-                Text("Rounded").tag(NoteStyle.Typeface.rounded)
+            // Each lettering is shown in itself, so the choice is made by eye.
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Space.xs) {
+                    ForEach(NoteStyle.Typeface.allCases, id: \.self) { typeface in
+                        let locked = typeface.isPremium && !app.entitlement.isPremium
+                        let selected = model.content.style.typeface == typeface
+                        Button {
+                            if locked {
+                                app.router.isShowingPaywall = true
+                            } else {
+                                Haptics.selection()
+                                model.content.style.typeface = typeface
+                            }
+                        } label: {
+                            HStack(spacing: Space.xxs) {
+                                Text(typeface.title).font(NoteFont.font(typeface, size: 19))
+                                if locked { Image(systemName: "lock.fill").font(.system(size: 10)) }
+                            }
+                            .foregroundStyle(selected ? palette.onAccent : palette.ink)
+                            .padding(.horizontal, Space.sm)
+                            .frame(minHeight: 36)
+                            .background(selected ? palette.accent : palette.surface, in: Capsule())
+                        }
+                        .accessibilityLabel(Text(typeface.title))
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                        .accessibilityHint(locked ? Text("Premium") : Text(""))
+                        .accessibilityIdentifier("style.typeface.\(typeface.rawValue)")
+                    }
+                }
+                .padding(.horizontal, Space.md)
             }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, Space.md)
-            .accessibilityIdentifier("style.typeface")
 
             SwatchRow(
-                items: Paper.all.map { SwatchItem(id: $0.id, hex: $0.hex, isLocked: !EntitlementRules.canUse($0, with: app.entitlement), pattern: $0.pattern) },
+                items: Paper.all.map { SwatchItem(id: $0.id, hex: $0.hex, isLocked: !EntitlementRules.canUse($0, with: app.entitlement), pattern: $0.pattern, gradientHex: $0.gradientHex) },
                 selection: model.content.style.paper, shape: .paper,
                 label: { String(localized: "Paper \($0)") }
             ) { id in model.setPaper(Paper.find(id)) }
@@ -595,6 +745,41 @@ struct StyleTray: View {
                 selection: model.content.style.ink,
                 label: { String(localized: "Ink \($0)") }
             ) { id in model.content.style.ink = id }
+
+            // What plays when the note is opened. One row, off by default.
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Space.xs) {
+                    Text("When opened")
+                        .font(Typo.caption)
+                        .foregroundStyle(palette.inkSecondary)
+                    ForEach(NoteEffectChoice.allCases, id: \.self) { choice in
+                        let locked = choice.effect != nil && !app.entitlement.isPremium
+                        let selected = model.content.style.effect == choice.effect
+                        Button {
+                            if locked {
+                                app.router.isShowingPaywall = true
+                            } else {
+                                Haptics.selection()
+                                model.content.style.effect = choice.effect
+                            }
+                        } label: {
+                            HStack(spacing: Space.xxs) {
+                                Image(systemName: choice.symbol).font(.system(size: 13, weight: .semibold))
+                                Text(choice.title).font(Typo.calloutStrong)
+                                if locked { Image(systemName: "lock.fill").font(.system(size: 10)) }
+                            }
+                            .foregroundStyle(selected ? palette.onAccent : palette.ink)
+                            .padding(.horizontal, Space.sm)
+                            .frame(minHeight: 36)
+                            .background(selected ? palette.accent : palette.surface, in: Capsule())
+                        }
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                        .accessibilityHint(locked ? Text("Premium") : Text("Plays when your partner opens the note"))
+                        .accessibilityIdentifier("style.effect.\(choice.rawValue)")
+                    }
+                }
+                .padding(.horizontal, Space.md)
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Space.xs) {
@@ -630,12 +815,34 @@ struct StickerTray: View {
     @Environment(AppEnvironment.self) private var app
     @Environment(\.palette) private var palette
     @Bindable var model: ComposerModel
+    @State private var pack: Sticker.Pack = .love
 
     var body: some View {
         VStack(spacing: Space.xs) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Space.xs) {
-                    ForEach(Sticker.all) { sticker in
+                    ForEach(Sticker.Pack.allCases, id: \.self) { option in
+                        Button {
+                            Haptics.selection()
+                            pack = option
+                        } label: {
+                            Text(option.title)
+                                .font(Typo.calloutStrong)
+                                .foregroundStyle(pack == option ? palette.onAccent : palette.ink)
+                                .padding(.horizontal, Space.sm)
+                                .frame(minHeight: 32)
+                                .background(pack == option ? palette.accent : palette.surface, in: Capsule())
+                        }
+                        .accessibilityAddTraits(pack == option ? .isSelected : [])
+                        .accessibilityIdentifier("sticker.pack.\(option.rawValue)")
+                    }
+                }
+                .padding(.horizontal, Space.md)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Space.xs) {
+                    ForEach(Sticker.inPack(pack)) { sticker in
                         let locked = !EntitlementRules.canUse(sticker, with: app.entitlement)
                         Button {
                             if locked {
@@ -645,9 +852,7 @@ struct StickerTray: View {
                                 model.addSticker(sticker)
                             }
                         } label: {
-                            Image(systemName: sticker.symbol)
-                                .font(.system(size: 24))
-                                .foregroundStyle(Color(hex: sticker.hex))
+                            StickerGlyph(sticker: sticker, size: sticker.emoji == nil ? 24 : 28)
                                 .frame(width: 52, height: 52)
                                 .background(palette.surface, in: RoundedRectangle(cornerRadius: Radius.field, style: .continuous))
                                 .overlay(alignment: .topTrailing) { if locked { PremiumMark().offset(x: 4, y: -4) } }
@@ -775,6 +980,7 @@ struct SwatchItem: Identifiable {
     let hex: String
     let isLocked: Bool
     var pattern: Paper.Pattern = .plain
+    var gradientHex: String?
 }
 
 struct SwatchRow: View {
@@ -827,7 +1033,10 @@ struct SwatchRow: View {
                 .overlay(Circle().strokeBorder(selected ? palette.accent : .clear, lineWidth: 2))
         case .paper:
             ZStack {
-                Color(hex: item.hex)
+                LinearGradient(
+                    colors: [Color(hex: item.hex), Color(hex: item.gradientHex ?? item.hex)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                )
                 PaperPatternView(pattern: item.pattern, isDark: ColorMath.luminance(hex: item.hex) < 0.3)
             }
             .frame(width: 32, height: 32)

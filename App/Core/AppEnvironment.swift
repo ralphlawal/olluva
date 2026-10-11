@@ -351,6 +351,8 @@ enum UnconfiguredBackend {
         func markSeen(noteID: UUID) async throws { throw fail }
         func reactions(coupleID: UUID) async throws -> [Reaction] { throw fail }
         func setReaction(noteID: UUID, kind: ReactionKind?) async throws { throw fail }
+        func streak(coupleID: UUID) async throws -> Streak { throw fail }
+        func report(noteID: UUID) async throws { throw fail }
         func events(coupleID: UUID) -> AsyncStream<SpaceEvent> { AsyncStream { $0.finish() } }
         func upload(_ data: Data, to path: String, contentType: String) async throws { throw fail }
         func download(path: String) async throws -> Data { throw fail }

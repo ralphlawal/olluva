@@ -21,6 +21,8 @@ struct NoteDetailView: View {
     let compose: (ComposerRequest) -> Void
     @State private var action = ActionState()
     @State private var confirmingDelete = false
+    @State private var confirmingReport = false
+    @State private var playsEffect = false
     @State private var toast: LocalizedStringKey?
 
     /// The freshest copy: the note may be edited, seen or deleted while open.
@@ -47,6 +49,31 @@ struct NoteDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }.accessibilityIdentifier("note.done")
+                }
+                if let current, !isMine {
+                    ToolbarItem(placement: .primaryAction) {
+                        Menu {
+                            Button(role: .destructive) {
+                                confirmingReport = true
+                            } label: {
+                                Label("Report this note", systemImage: "exclamationmark.bubble")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
+                        .accessibilityLabel(Text("More"))
+                        .accessibilityIdentifier("note.more")
+                        .confirmationDialog("Report this note?", isPresented: $confirmingReport, titleVisibility: .visible) {
+                            Button("Report", role: .destructive) {
+                                action.run({ try await app.backend.notes.report(noteID: current.id) }, onSuccess: {
+                                    toast = "Reported. Thank you."
+                                })
+                            }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("We’ll look at it. If someone is making you uncomfortable, you can also leave this space and block them in Settings.")
+                        }
+                    }
                 }
                 if let current, isMine {
                     ToolbarItem(placement: .primaryAction) {
@@ -115,6 +142,19 @@ struct NoteDetailView: View {
                     LoadedNoteCard(content: note.content)
                 }
                 .frame(maxWidth: 460)
+                .overlay {
+                    if playsEffect, let effect = note.style.effect {
+                        NoteEffectView(effect: effect)
+                    }
+                }
+                .task(id: note.id) {
+                    // Once, each time the note is opened.
+                    guard note.style.effect != nil else { return }
+                    try? await Task.sleep(for: .milliseconds(350))
+                    playsEffect = true
+                    try? await Task.sleep(for: .seconds(NoteEffectView.duration + 0.2))
+                    playsEffect = false
+                }
 
                 // At the largest text sizes a card's lettering cannot grow with
                 // the setting, so the words are also given as ordinary text.

@@ -18,6 +18,8 @@ struct ComposerRequest: Identifiable {
     let id = UUID()
     var mode: Mode
     var startingTool: ComposerTool = .text
+    /// Today's question, when the note is being written in answer to it.
+    var question: String?
 }
 
 enum ComposerTool: String, CaseIterable, Identifiable {
@@ -82,6 +84,8 @@ final class ComposerModel {
     var canvasSide: CGFloat = 0
     var drawingTool: DrawingTool = .pen
     var drawingInk = Ink.defaultID
+    /// A colour chosen freely for drawing, overriding the ink above.
+    var drawingCustomHex: String?
     var strokeWidth: CGFloat = 4
     /// A drawing that came with the note being edited; new strokes go on top.
     private(set) var existingDrawing: CGImage?
@@ -100,7 +104,11 @@ final class ComposerModel {
     private let usesDraft: Bool
     private var saveTask: Task<Void, Never>?
 
+    /// Shown where the words will go until something is typed.
+    let question: String?
+
     init(request: ComposerRequest, storage: DraftStorage) {
+        question = request.question
         mode = request.mode
         tool = request.startingTool
         self.storage = storage

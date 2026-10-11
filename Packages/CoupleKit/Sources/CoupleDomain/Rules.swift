@@ -225,7 +225,35 @@ public enum EntitlementRules {
     public static func premiumElements(in style: NoteStyle) -> Bool {
         Paper.find(style.paper).isPremium
             || Ink.find(style.ink).isPremium
+            || style.typeface.isPremium
+            || style.effect != nil
             || style.stickers.contains { Sticker.find($0.sticker)?.isPremium == true }
+    }
+}
+
+// MARK: - Streak
+
+public enum StreakRules {
+    /// A day counts when both people wrote. The run is counted back from today
+    /// if today already counts, otherwise from yesterday, so a streak is not
+    /// shown as broken during a day that is not over yet.
+    public static func streak(mine: Set<DayDate>, partner: Set<DayDate>, today: DayDate, calendar: Calendar = .current) -> Streak {
+        let both = mine.intersection(partner)
+        func previous(_ day: DayDate) -> DayDate {
+            var components = DateComponents()
+            components.year = day.year
+            components.month = day.month
+            components.day = day.day
+            let date = calendar.date(from: components) ?? Date()
+            return DayDate(calendar.date(byAdding: .day, value: -1, to: date) ?? date, calendar: calendar)
+        }
+        var cursor = both.contains(today) ? today : previous(today)
+        var days = 0
+        while both.contains(cursor) {
+            days += 1
+            cursor = previous(cursor)
+        }
+        return Streak(days: days, wroteToday: mine.contains(today), partnerWroteToday: partner.contains(today))
     }
 }
 

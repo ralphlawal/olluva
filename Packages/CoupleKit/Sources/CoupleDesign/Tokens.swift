@@ -234,6 +234,12 @@ public enum NoteFont {
         case .hand: .custom(handName, fixedSize: size)
         case .serif: .system(size: size * 0.9, weight: .regular, design: .serif)
         case .rounded: .system(size: size * 0.86, weight: .medium, design: .rounded)
+        // All of these ship with iOS. Each is scaled so that the same words
+        // take up about the same room whichever lettering is chosen.
+        case .typewriter: .custom("AmericanTypewriter", fixedSize: size * 0.8)
+        case .script: .custom("SnellRoundhand-Bold", fixedSize: size * 0.98)
+        case .marker: .custom("MarkerFelt-Wide", fixedSize: size * 0.84)
+        case .casual: .custom("Noteworthy-Bold", fixedSize: size * 0.82)
         }
     }
 }

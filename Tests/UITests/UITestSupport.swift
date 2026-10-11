@@ -39,6 +39,18 @@ extension XCUIElement {
         tap()
     }
 
+    /// Taps something in a sideways-scrolling row, bringing it into view first.
+    func tapInRow(of app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        waitToAppear(file: file, line: line)
+        let window = app.windows.firstMatch.frame
+        for _ in 0..<8 where !(frame.minX >= 8 && frame.maxX <= window.maxX - 8) {
+            let y = frame.midY / window.height
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: y))
+                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: y)))
+        }
+        tap()
+    }
+
     func replaceText(_ text: String) {
         tapWhenReady()
         typeText(text)

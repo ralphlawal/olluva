@@ -169,6 +169,21 @@ public struct NoteStyle: Codable, Equatable, Sendable {
         case hand
         case serif
         case rounded
+        case typewriter
+        case script
+        case marker
+        case casual
+
+        public var isPremium: Bool {
+            self != .hand && self != .serif && self != .rounded
+        }
+    }
+
+    /// Something that plays once when the other person opens the note.
+    public enum Effect: String, Codable, CaseIterable, Sendable {
+        case hearts
+        case confetti
+        case sparkles
     }
 
     public enum PhotoLayout: String, Codable, CaseIterable, Sendable {
@@ -183,16 +198,18 @@ public struct NoteStyle: Codable, Equatable, Sendable {
     public var typeface: Typeface
     public var photoLayout: PhotoLayout
     public var stickers: [StickerPlacement]
+    public var effect: Effect?
 
     public init(
         paper: String = Paper.defaultID, ink: String = Ink.defaultID, typeface: Typeface = .hand,
-        photoLayout: PhotoLayout = .framed, stickers: [StickerPlacement] = []
+        photoLayout: PhotoLayout = .framed, stickers: [StickerPlacement] = [], effect: Effect? = nil
     ) {
         self.paper = paper
         self.ink = ink
         self.typeface = typeface
         self.photoLayout = photoLayout
         self.stickers = stickers
+        self.effect = effect
     }
 
     // Decoding is deliberately forgiving: a style written by a newer app
@@ -204,10 +221,11 @@ public struct NoteStyle: Codable, Equatable, Sendable {
         typeface = (try? container.decode(Typeface.self, forKey: .typeface)) ?? .hand
         photoLayout = (try? container.decode(PhotoLayout.self, forKey: .photoLayout)) ?? .framed
         stickers = (try? container.decode([StickerPlacement].self, forKey: .stickers)) ?? []
+        effect = try? container.decode(Effect.self, forKey: .effect)
     }
 
     enum CodingKeys: String, CodingKey {
-        case paper, ink, typeface, stickers
+        case paper, ink, typeface, stickers, effect
         case photoLayout = "photo_layout"
     }
 }
@@ -426,6 +444,23 @@ public struct NotificationPreferences: Codable, Equatable, Sendable {
 
 public enum PushEnvironment: String, Sendable {
     case sandbox, production
+}
+
+// MARK: - Streak
+
+/// How many days running you have both left each other a note.
+public struct Streak: Codable, Equatable, Sendable {
+    public var days: Int
+    public var wroteToday: Bool
+    public var partnerWroteToday: Bool
+
+    public init(days: Int = 0, wroteToday: Bool = false, partnerWroteToday: Bool = false) {
+        self.days = days
+        self.wroteToday = wroteToday
+        self.partnerWroteToday = partnerWroteToday
+    }
+
+    public static let none = Streak()
 }
 
 // MARK: - Entitlement

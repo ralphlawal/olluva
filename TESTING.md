@@ -6,10 +6,10 @@ Four suites. Each can be run by itself; none needs network access, Docker, or an
 
 | Suite | Runs on | Tests | Result |
 | --- | --- | --- | --- |
-| Database security and Edge Function logic | Node 24 + embedded Postgres 17 | 123 | 123 passed |
+| Database security and Edge Function logic | Node 24 + embedded Postgres 17 | 127 | 127 passed |
 | Swift package (`CoupleKit`) | macOS, `swift test` | 98 | 97 passed, 1 skipped (live-server test, needs credentials) |
 | App unit tests | iPhone 17 simulator, iOS 26.5 | 55 | 48 passed, **7 skipped** |
-| UI tests | iPhone 17 simulator, iOS 26.5 | 27 | 27 passed |
+| UI tests | iPhone 17 simulator, iOS 26.5 | 29 | 29 passed |
 
 Builds: Debug and Release both build for the simulator, including the widget extension.
 

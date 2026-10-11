@@ -102,6 +102,7 @@ struct HomeView: View {
                     if app.backend.isDemo, !ProcessInfo.processInfo.arguments.contains("-storeScreenshots") { demoBanner }
                     hero
                     composeActions
+                    questionCard
                     if !app.notes.pending.isEmpty { pendingSection }
                     if let sent { sentSection(sent) }
                     datesSection
@@ -151,6 +152,20 @@ struct HomeView: View {
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
             Spacer(minLength: Space.xs)
+            if app.notes.streak.days > 0 {
+                // Days running on which you both wrote.
+                HStack(spacing: 3) {
+                    Image(systemName: "flame.fill").font(.system(size: 14, weight: .semibold))
+                    Text("\(app.notes.streak.days)").font(Typo.calloutStrong).monospacedDigit()
+                }
+                .foregroundStyle(palette.highlight)
+                .padding(.horizontal, Space.sm)
+                .frame(minHeight: 36)
+                .background(palette.sunken, in: Capsule())
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text("\(app.notes.streak.days)-day streak"))
+                .accessibilityIdentifier("home.streak")
+            }
             Button {
                 showingPersonalise = true
             } label: {
@@ -160,6 +175,60 @@ struct HomeView: View {
             .accessibilityLabel(Text("Personalise"))
             .accessibilityIdentifier("home.personalise")
         }
+    }
+
+    // Today's question: one small reason to write every day. It is the same
+    // for both of you, and answering it is just writing a note.
+    // Layouts weighed: a full-width banner above the note (competes with the
+    // note for attention), a row in the list below (too easy to miss), and a
+    // quiet card straight under the write buttons. The card is used: it sits
+    // where the decision to write is made and never outranks the note itself.
+    private var questionCard: some View {
+        let question = DailyQuestion.question(on: DayDate(Date()))
+        return Button {
+            Haptics.tap()
+            compose(ComposerRequest(mode: .new, question: question))
+        } label: {
+            HStack(alignment: .center, spacing: Space.sm) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    Text("Today’s question")
+                        .font(Typo.overline)
+                        .textCase(.uppercase)
+                        .tracking(0.8)
+                        .foregroundStyle(palette.inkSecondary)
+                    Text(question)
+                        .font(Typo.heading)
+                        .foregroundStyle(palette.ink)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(questionStatus)
+                        .font(Typo.caption)
+                        .foregroundStyle(app.notes.streak.wroteToday ? palette.inkSecondary : palette.highlight)
+                }
+                Spacer(minLength: Space.xs)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(palette.inkTertiary)
+                    .accessibilityHidden(true)
+            }
+            .padding(Space.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(palette.sunken, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(Text("Answer with a note"))
+        .accessibilityIdentifier("home.question")
+    }
+
+    private var questionStatus: String {
+        let streak = app.notes.streak
+        let name = partner?.displayName ?? String(localized: "Your partner")
+        if streak.wroteToday, streak.partnerWroteToday { return String(localized: "You’ve both written today.") }
+        if streak.partnerWroteToday { return String(localized: "\(name) wrote today. Your turn.") }
+        if streak.wroteToday { return String(localized: "You’ve written today. Waiting for \(name).") }
+        if streak.days > 0 { return String(localized: "Write today to keep your \(streak.days)-day streak.") }
+        return String(localized: "Answer it with a note.")
     }
 
     private var connectionLine: String {

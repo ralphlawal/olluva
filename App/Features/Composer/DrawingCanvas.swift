@@ -79,6 +79,10 @@ struct DrawingCanvas: UIViewRepresentable {
         case .pen: return PKInkingTool(.pen, color: color, width: width)
         case .marker: return PKInkingTool(.marker, color: color.withAlphaComponent(0.7), width: width * 3)
         case .pencil: return PKInkingTool(.pencil, color: color, width: width * 1.4)
+        case .fountain: return PKInkingTool(.fountainPen, color: color, width: width * 1.6)
+        case .fineliner: return PKInkingTool(.monoline, color: color, width: width * 0.8)
+        case .watercolour: return PKInkingTool(.watercolor, color: color, width: width * 5)
+        case .crayon: return PKInkingTool(.crayon, color: color, width: width * 3)
         case .eraser: return PKEraserTool(.vector)
         }
     }
@@ -107,6 +111,10 @@ extension DrawingTool {
         case .pen: "pencil.tip"
         case .marker: "highlighter"
         case .pencil: "pencil"
+        case .fountain: "pencil.tip.crop.circle"
+        case .fineliner: "pencil.line"
+        case .watercolour: "paintbrush.pointed"
+        case .crayon: "scribble.variable"
         case .eraser: "eraser"
         }
     }
@@ -116,6 +124,10 @@ extension DrawingTool {
         case .pen: "Pen"
         case .marker: "Marker"
         case .pencil: "Pencil"
+        case .fountain: "Fountain pen"
+        case .fineliner: "Fine liner"
+        case .watercolour: "Watercolour"
+        case .crayon: "Crayon"
         case .eraser: "Eraser"
         }
     }
