@@ -144,6 +144,7 @@ final class AppEnvironment {
         // result can be read from the console without opening the paywall.
         if ProcessInfo.processInfo.arguments.contains("-probeProducts") {
             Task { await purchases.loadProducts() }
+            StoreProbe.shared.run()
         }
         #endif
 

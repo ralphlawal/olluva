@@ -178,7 +178,6 @@ schemes:
         CoupleNotesNotifications: all
     run:
       config: Debug
-      storeKitConfiguration: App/Resources/Products.storekit
     test:
       config: Debug
       targets:
