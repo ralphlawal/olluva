@@ -23,6 +23,9 @@ targets:
     platform: iOS
     sources:
       - path: App
+        # The local StoreKit catalogue is for tests; it does not ship.
+        excludes:
+          - "Resources/Products.storekit"
     dependencies:
       - package: CoupleKit
         product: CoupleDomain
