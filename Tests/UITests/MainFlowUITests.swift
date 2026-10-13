@@ -50,7 +50,7 @@ final class HomeAndNotesUITests: UITestCase {
         snapshot("25-composer-style")
 
         app.element("composer.tool.stickers").tap()
-        app.element("sticker.add.hearts").tapWhenReady()
+        app.element("sticker.add.heart").tapWhenReady()
         app.element("sticker.remove").waitToAppear()
         snapshot("26-composer-stickers")
 
@@ -88,41 +88,6 @@ final class HomeAndNotesUITests: UITestCase {
         XCTAssertTrue(app.element("draw.undo").isEnabled)
         app.element("composer.send").tap()
         app.element("home.sentNote").waitToAppear(12)
-    }
-
-    func testTodaysQuestionOpensANoteToAnswerIt() {
-        let app = XCUIApplication.launched(.paired)
-        app.element("home.question").tapWhenReady()
-        let text = app.element("composer.text").waitToAppear()
-        snapshot("33-question-composer")
-        text.tap()
-        text.typeText("Your terrible puns")
-        app.element("composer.send").tap()
-        app.element("home.sentNote").waitToAppear(12)
-    }
-
-    func testPremiumLooksStickersAndEffectsCanBeUsedAndSent() {
-        let app = XCUIApplication.launched(.premium)
-        app.element("home.compose").tapWhenReady()
-        let text = app.element("composer.text").waitToAppear()
-        text.tap()
-        text.typeText("Beach this weekend?")
-        app.element("composer.tool.style").tap()
-        app.element("style.typeface.marker").tapInRow(of: app)
-        app.element("swatch.sunset").tapInRow(of: app)
-        app.element("style.effect.confetti").tapInRow(of: app)
-        snapshot("34-composer-premium-style")
-        app.element("composer.tool.stickers").tap()
-        app.element("sticker.pack.places").tapInRow(of: app)
-        app.element("sticker.add.beach").tapInRow(of: app)
-        snapshot("35-composer-premium-sticker")
-        app.element("composer.send").tap()
-        app.element("home.sentNote").waitToAppear(12)
-        // Opening it plays the effect; the note must simply be there and stay usable.
-        app.element("home.sentNote").tap()
-        app.element("note.done").waitToAppear()
-        snapshot("36-note-with-effect")
-        app.element("note.done").tap()
     }
 
     func testAFailedSendIsNeverReportedAsSent() {

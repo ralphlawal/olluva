@@ -20,8 +20,6 @@ final class NotesStore {
     private(set) var loadState: LoadState = .idle
     private(set) var pending: [PendingSend] = []
     private(set) var hasMoreHistory = true
-    /// Days running on which you both wrote. Refreshed with the notes.
-    private(set) var streak = Streak.none
     private(set) var isLoadingMore = false
 
     /// Called after any change that could alter what the widget shows.
@@ -59,14 +57,6 @@ final class NotesStore {
     }
 
     /// Loads the newest notes for a space. Safe to call again to resynchronise.
-    /// Best-effort: the streak is a nicety, and its absence is not an error.
-    func refreshStreak() async {
-        guard let coupleID else { return }
-        if let latest = try? await backend.notes.streak(coupleID: coupleID), self.coupleID == coupleID {
-            streak = latest
-        }
-    }
-
     func load(coupleID: UUID) async {
         if self.coupleID != coupleID {
             reset()
@@ -97,7 +87,6 @@ final class NotesStore {
             self.reactions = Dictionary(grouping: loadedReactions, by: \.noteID)
             loadState = .loaded
             onChanged?()
-            await refreshStreak()
         } catch {
             Diagnostics.failure(Diagnostics.sync, "notes.load", error)
             // Keep showing what we have; only an empty screen becomes an error screen.
@@ -123,8 +112,6 @@ final class NotesStore {
         case .note(let note):
             feed.apply(note)
             onChanged?()
-            await refreshStreak()
-            await refreshStreak()
         case .reactionsChanged:
             await reloadReactions()
         case .resynchronise:
@@ -142,7 +129,6 @@ final class NotesStore {
     func reset() {
         for task in retryTasks.values { task.cancel() }
         retryTasks = [:]
-        streak = .none
         coupleID = nil
         feed = NoteFeed()
         reactions = [:]

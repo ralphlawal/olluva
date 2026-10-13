@@ -4,16 +4,6 @@ All notable changes to this project are recorded here. Format: [Keep a Changelog
 
 ## [Unreleased]
 
-### 1.1 (in progress)
-- **Today's question**: one question a day, the same for both of you, answered with a note. It needs no server: both phones pick it from the calendar day.
-- **Streak**: days running on which you both wrote, shown on Today. Counted on the server in each person's own time zone; an unfinished today never breaks it.
-- **Stickers**: six packs of die-cut stickers (over sixty), chosen by pack. The original flat stickers are kept as "Classic", and every id already stored in a note still draws.
-- **Styles**: four more letterings (typewriter, script, marker, casual) and five more papers, including gradients and patterns.
-- **Drawing**: fountain pen, fine liner, watercolour and crayon, and any colour.
-- **Effects**: hearts, confetti or sparkles that play when a note is opened. Skipped under Reduce Motion.
-- **Report a note** you received; stored for the operator, and the author is not told.
-- Notes from this version open in 1.0: an unknown lettering falls back to handwriting, an unknown paper to cream, and an effect is ignored.
-
 ### Added
 - **Backend**: Supabase schema with Row Level Security on every table; database functions for pairing, notes, reactions, memories, dates, scheduled delivery, device tokens, entitlement, export and account deletion; private storage buckets with path-scoped policies; reference-counted media purge; retention jobs.
 - **Edge Functions**: `verify-purchase`, `app-store-notifications`, `send-push`, `purge-storage`, `delete-account`.

@@ -252,9 +252,7 @@ extension ProductConfiguration.Feature {
         switch self {
         case .themes: "paintpalette"
         case .papers: "doc.richtext"
-        case .stickers: "face.smiling"
         case .drawingTools: "pencil.and.outline"
-        case .effects: "sparkles"
         case .scheduled: "gift"
         case .memories: "book.closed"
         case .templates: "rectangle.on.rectangle.angled"
@@ -265,10 +263,8 @@ extension ProductConfiguration.Feature {
     var title: LocalizedStringKey {
         switch self {
         case .themes: "More themes, and your own accent colour"
-        case .papers: "Every paper, ink and lettering"
-        case .stickers: "All six sticker packs"
-        case .drawingTools: "Six more brushes, in any colour"
-        case .effects: "Notes that open with a flourish"
+        case .papers: "Every paper, ink and sticker"
+        case .drawingTools: "Marker and pencil for drawing"
         case .scheduled: "Plan many surprises at once"
         case .memories: "A much bigger scrapbook"
         case .templates: "Templates for special occasions"
@@ -279,10 +275,8 @@ extension ProductConfiguration.Feature {
     var detail: LocalizedStringKey {
         switch self {
         case .themes: "Four more looks for your shared space."
-        case .papers: "Gradient and patterned papers, four more inks, four more styles of lettering."
-        case .stickers: "Over sixty stickers. Free includes a few from each pack."
-        case .drawingTools: "Fountain pen, fine liner, watercolour, crayon, marker and pencil."
-        case .effects: "Hearts, confetti or sparkles when your partner opens it."
+        case .papers: "Six more papers, four more inks and eight more stickers."
+        case .drawingTools: "Alongside the pen and eraser everyone has."
         case .scheduled: "Up to \(ProductConfiguration.premium.pendingScheduledMessages) waiting at a time. Free includes \(ProductConfiguration.free.pendingScheduledMessages)."
         case .memories: "Keep up to \(ProductConfiguration.premium.memories) memories. Free includes \(ProductConfiguration.free.memories)."
         case .templates: "Anniversary, birthday, date night and more."

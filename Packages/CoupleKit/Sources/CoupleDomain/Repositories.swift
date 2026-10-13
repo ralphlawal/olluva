@@ -76,10 +76,6 @@ public protocol NoteRepository: Sendable {
     func markSeen(noteID: UUID) async throws
     func reactions(coupleID: UUID) async throws -> [Reaction]
     func setReaction(noteID: UUID, kind: ReactionKind?) async throws
-    /// Days running on which both people wrote, in the caller's time zone.
-    func streak(coupleID: UUID) async throws -> Streak
-    /// Flags a note the caller received for the operator to look at.
-    func report(noteID: UUID) async throws
 }
 
 /// Something changed in the shared space. Events carry as little as possible;

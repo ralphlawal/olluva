@@ -366,19 +366,6 @@ extension SupabaseRepositories: NoteRepository {
             _ = try await client.rpc("set_reaction", params: ReactionParams(p_note_id: noteID, p_kind: kind?.rawValue)).execute()
         }
     }
-
-    func streak(coupleID: UUID) async throws -> Streak {
-        try await run {
-            let payload: StreakPayload = try await client.rpc("get_streak").execute().value
-            return Streak(days: payload.days, wroteToday: payload.me_today, partnerWroteToday: payload.partner_today)
-        }
-    }
-
-    func report(noteID: UUID) async throws {
-        try await run {
-            _ = try await client.rpc("report_note", params: ["p_note_id": noteID]).execute()
-        }
-    }
 }
 
 // MARK: - Realtime

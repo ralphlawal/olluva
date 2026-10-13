@@ -482,28 +482,6 @@ extension LocalBackend: NoteRepository {
             state.pendingEvents.append((note.coupleID, .reactionsChanged))
         }
     }
-
-    public func streak(coupleID: UUID) async throws -> Streak {
-        await pause()
-        let uid = try user()
-        return try world.mutate { state, _ in
-            try state.requireMember(uid, of: coupleID)
-            let notes = state.notes.filter { $0.coupleID == coupleID }
-            let mine = Set(notes.filter { $0.authorID == uid }.map { DayDate($0.createdAt) })
-            let partner = Set(notes.filter { $0.authorID != nil && $0.authorID != uid }.map { DayDate($0.createdAt) })
-            return StreakRules.streak(mine: mine, partner: partner, today: DayDate(Date()))
-        }
-    }
-
-    public func report(noteID: UUID) async throws {
-        await pause()
-        let uid = try user()
-        try world.mutate { state, _ in
-            guard let note = state.notes.first(where: { $0.id == noteID }), !note.isDeleted else { throw AppError.noteNotFound }
-            try state.requireMember(uid, of: note.coupleID)
-            guard note.authorID != uid else { throw AppError.notAuthor }
-        }
-    }
 }
 
 // MARK: - Realtime and media

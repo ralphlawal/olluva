@@ -18,12 +18,6 @@ struct ProfileRow: Decodable {
     }
 }
 
-struct StreakPayload: Decodable {
-    let days: Int
-    let me_today: Bool
-    let partner_today: Bool
-}
-
 struct CoupleSpaceRow: Decodable {
     let id: UUID
     let theme_id: String

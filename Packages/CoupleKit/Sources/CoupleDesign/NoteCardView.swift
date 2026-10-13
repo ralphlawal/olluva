@@ -36,7 +36,7 @@ public struct NoteCardView: View {
         GeometryReader { proxy in
             let side = min(proxy.size.width, proxy.size.height)
             ZStack {
-                paperFill
+                paperColor
                 PaperPatternView(pattern: paper.pattern, isDark: paper.isDark)
                 photoLayer(side: side)
                 if showsText {
@@ -63,15 +63,6 @@ public struct NoteCardView: View {
 
     private var paperColor: Color {
         Color(hex: scheme == .dark && dimsInDarkMode ? paper.darkHex : paper.hex)
-    }
-
-    @ViewBuilder
-    private var paperFill: some View {
-        if let end = paper.gradientHex {
-            LinearGradient(colors: [paperColor, Color(hex: end)], startPoint: .topLeading, endPoint: .bottomTrailing)
-        } else {
-            paperColor
-        }
     }
 
     @ViewBuilder
@@ -204,47 +195,12 @@ struct StickerView: View {
 
     var body: some View {
         if let sticker = Sticker.find(placement.sticker) {
-            StickerGlyph(sticker: sticker, size: side * 0.13 * placement.scale)
+            Image(systemName: sticker.symbol)
+                .font(.system(size: side * 0.13 * placement.scale, weight: .regular))
+                .foregroundStyle(Color(hex: sticker.hex))
                 .rotationEffect(.degrees(placement.rotation))
                 .position(x: side * placement.x, y: side * placement.y)
                 .accessibilityHidden(true)
-        }
-    }
-}
-
-/// One sticker at a given size: the same drawing on a note, in the picker and
-/// in a widget.
-public struct StickerGlyph: View {
-    private let sticker: Sticker
-    private let size: CGFloat
-
-    public init(sticker: Sticker, size: CGFloat) {
-        self.sticker = sticker
-        self.size = size
-    }
-
-    public var body: some View {
-        if let emoji = sticker.emoji {
-            // A die-cut sticker: the picture on a white border that follows
-            // its outline, lifted slightly off the paper. The border is the
-            // picture itself, whitened and nudged in eight directions.
-            let border = size * 0.075
-            ZStack {
-                ForEach(0..<8, id: \.self) { step in
-                    let angle = Double(step) * .pi / 4
-                    Text(emoji)
-                        .brightness(1)
-                        .offset(x: cos(angle) * border, y: sin(angle) * border)
-                }
-                Text(emoji)
-            }
-            .font(.system(size: size * 1.05))
-            .compositingGroup()
-            .shadow(color: .black.opacity(0.18), radius: size * 0.04, y: size * 0.03)
-        } else {
-            Image(systemName: sticker.symbol)
-                .font(.system(size: size, weight: .regular))
-                .foregroundStyle(Color(hex: sticker.hex))
         }
     }
 }
@@ -288,44 +244,6 @@ public struct PaperPatternView: View {
                     context.stroke(path, with: .color(line.opacity(0.7)), lineWidth: max(0.5, side / 600))
                     position += cell
                 }
-            case .hearts, .stars:
-                // Scattered rather than gridded, but from a fixed sequence so
-                // the same sheet always looks the same.
-                let symbol = context.resolveSymbol(id: pattern.rawValue)
-                var seed: UInt64 = 0x9E3779B97F4A7C15
-                func next() -> CGFloat {
-                    seed = seed &* 6364136223846793005 &+ 1442695040888963407
-                    return CGFloat((seed >> 33) % 10_000) / 10_000
-                }
-                let columns = 5
-                let cell = side / CGFloat(columns)
-                for row in 0..<columns {
-                    for column in 0..<columns {
-                        let x = (CGFloat(column) + 0.2 + next() * 0.6) * cell
-                        let y = (CGFloat(row) + 0.2 + next() * 0.6) * cell
-                        let scale = 0.55 + next() * 0.6
-                        guard let symbol else { continue }
-                        var layer = context
-                        layer.opacity = isDark ? 0.5 : 0.36
-                        layer.translateBy(x: x, y: y)
-                        layer.rotate(by: .degrees(Double(next() * 40 - 20)))
-                        layer.scaleBy(x: scale * side / 400, y: scale * side / 400)
-                        layer.draw(symbol, at: .zero)
-                    }
-                }
-            case .stripes:
-                let band = side / 12
-                var x = -side
-                while x < side * 2 {
-                    var path = Path()
-                    path.move(to: CGPoint(x: x, y: 0))
-                    path.addLine(to: CGPoint(x: x + band, y: 0))
-                    path.addLine(to: CGPoint(x: x + band - side * 0.5, y: side))
-                    path.addLine(to: CGPoint(x: x - side * 0.5, y: side))
-                    path.closeSubpath()
-                    context.fill(path, with: .color(Color(hex: "#E8B4A0").opacity(0.28)))
-                    x += band * 2
-                }
             case .dotted:
                 let cell = side / 14
                 let radius = max(0.6, side / 320)
@@ -342,15 +260,6 @@ public struct PaperPatternView: View {
                     y += cell
                 }
             }
-        } symbols: {
-            Image(systemName: "heart.fill")
-                .font(.system(size: 22))
-                .foregroundStyle(Color(hex: "#E58FA0"))
-                .tag(Paper.Pattern.hearts.rawValue)
-            Image(systemName: "sparkle")
-                .font(.system(size: 18))
-                .foregroundStyle(Color(hex: "#F4E3B0"))
-                .tag(Paper.Pattern.stars.rawValue)
         }
         .accessibilityHidden(true)
     }
