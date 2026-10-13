@@ -73,6 +73,8 @@ public enum DeepLink: Equatable, Sendable {
     case compose
     case note(UUID)
     case join(code: String)
+    /// The daily question.
+    case together
 
     public var url: URL {
         switch self {
@@ -81,6 +83,7 @@ public enum DeepLink: Equatable, Sendable {
         case .compose: URL(string: "\(InviteCode.scheme)://compose")!
         case .note(let id): URL(string: "\(InviteCode.scheme)://note/\(id.uuidString.lowercased())")!
         case .join(let code): InviteCode.link(for: code)
+        case .together: URL(string: "\(InviteCode.scheme)://together")!
         }
     }
 
@@ -96,6 +99,7 @@ public enum DeepLink: Equatable, Sendable {
         case "join":
             guard let code = InviteCode.extract(from: url) else { return nil }
             self = .join(code: code)
+        case "together": self = .together
         default:
             return nil
         }

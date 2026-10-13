@@ -102,6 +102,7 @@ struct HomeView: View {
                     if app.backend.isDemo, !ProcessInfo.processInfo.arguments.contains("-storeScreenshots") { demoBanner }
                     hero
                     composeActions
+                    TogetherCard()
                     if !app.notes.pending.isEmpty { pendingSection }
                     if let sent { sentSection(sent) }
                     datesSection
@@ -123,6 +124,7 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar)
             .refreshable { await app.refreshContent() }
             .sheet(isPresented: $showingPersonalise) { PersonaliseView() }
+            .navigationDestination(isPresented: Bindable(app.router).isShowingTogether) { TogetherView() }
         }
     }
 

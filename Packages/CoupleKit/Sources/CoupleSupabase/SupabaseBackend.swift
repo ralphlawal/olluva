@@ -23,7 +23,8 @@ public enum SupabaseBackendFactory {
         return Backend(
             auth: repositories, profiles: repositories, couples: repositories, notes: repositories,
             realtime: repositories, media: repositories, memories: repositories, dates: repositories,
-            schedule: repositories, notifications: repositories, entitlements: repositories, isDemo: false
+            schedule: repositories, notifications: repositories, entitlements: repositories,
+            together: repositories, isDemo: false
         )
     }
 }
@@ -404,6 +405,8 @@ extension SupabaseRepositories: RealtimeRepository {
                 let dates = channel.postgresChange(AnyAction.self, schema: "public", table: "important_dates", filter: byCouple)
                 let members = channel.postgresChange(AnyAction.self, schema: "public", table: "couple_members", filter: byCouple)
                 let spaces = channel.postgresChange(AnyAction.self, schema: "public", table: "couple_spaces", filter: .eq("id", value: id))
+                // Carries no answers: only that a moment moved on.
+                let together = channel.postgresChange(AnyAction.self, schema: "public", table: "together_moments", filter: byCouple)
                 let status = channel.statusChange
 
                 // If the live connection cannot be opened the app still works:
@@ -437,6 +440,7 @@ extension SupabaseRepositories: RealtimeRepository {
                     group.addTask { for await _ in dates { continuation.yield(.datesChanged) } }
                     group.addTask { for await _ in members { continuation.yield(.spaceChanged) } }
                     group.addTask { for await _ in spaces { continuation.yield(.spaceChanged) } }
+                    group.addTask { for await _ in together { continuation.yield(.togetherChanged) } }
                     group.addTask {
                         // After a dropped connection comes back, changes made in
                         // the gap were never delivered: tell the app to re-read.
@@ -473,6 +477,7 @@ private struct LoggingContinuation: Sendable {
         case .spaceChanged: kind = "space"
         case .memoriesChanged: kind = "memories"
         case .datesChanged: kind = "dates"
+        case .togetherChanged: kind = "together"
         case .resynchronise: kind = "resynchronise"
         }
         realtimeLog.notice("event: \(kind)")
@@ -657,10 +662,71 @@ extension SupabaseRepositories: ScheduleRepository {
     }
 }
 
+// MARK: - Together
+
+extension SupabaseRepositories: TogetherRepository {
+    // Every call is a database function. The app holds no privilege on the
+    // answers table, so there is no query it could write that would return a
+    // partner's answer early; what comes back is what the server allows.
+
+    func today() async throws -> TogetherMoment? {
+        try await run {
+            let payload: TogetherPayload = try await client.rpc("together_today").execute().value
+            return payload.model
+        }
+    }
+
+    func submit(momentID: UUID, answer: String) async throws -> TogetherMoment {
+        guard TogetherRules.isValid(answer) else { throw AppError.invalidAnswer(limit: TogetherRules.answerLimit) }
+        return try await run {
+            let payload: TogetherPayload = try await client.rpc(
+                "together_submit", params: TogetherSubmitParams(p_moment: momentID, p_body: TogetherRules.cleaned(answer))
+            ).execute().value
+            return try payload.required()
+        }
+    }
+
+    func reveal(momentID: UUID) async throws -> TogetherMoment {
+        try await run {
+            let payload: TogetherPayload = try await client.rpc("together_reveal", params: TogetherMomentParams(p_moment: momentID)).execute().value
+            return try payload.required()
+        }
+    }
+
+    func moment(id: UUID) async throws -> TogetherMoment {
+        try await run {
+            let payload: TogetherPayload = try await client.rpc("together_moment", params: TogetherMomentParams(p_moment: id)).execute().value
+            return try payload.required()
+        }
+    }
+
+    func history(before: DayDate?, limit: Int) async throws -> [TogetherMoment] {
+        try await run {
+            let payloads: [TogetherPayload] = try await client.rpc(
+                "together_history", params: TogetherHistoryParams(p_before: before?.description, p_limit: limit)
+            ).execute().value
+            return payloads.compactMap(\.model)
+        }
+    }
+
+    func saveToMemories(momentID: UUID) async throws -> UUID {
+        try await run {
+            try await client.rpc("together_save_memory", params: TogetherMomentParams(p_moment: momentID)).execute().value
+        }
+    }
+
+    func removeFromMemories(momentID: UUID) async throws {
+        try await run {
+            _ = try await client.rpc("together_unsave_memory", params: TogetherMomentParams(p_moment: momentID)).execute()
+        }
+    }
+}
+
 // MARK: - Notifications
 
 extension SupabaseRepositories: NotificationRepository {
-    private static let preferenceColumns = "new_notes, surprises, important_dates, pairing, account, show_previews"
+    private static let preferenceColumns =
+        "new_notes, surprises, important_dates, pairing, account, show_previews, together, together_daily"
 
     func preferences() async throws -> NotificationPreferences {
         try await run {

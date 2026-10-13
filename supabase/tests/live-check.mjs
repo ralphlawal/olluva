@@ -162,6 +162,62 @@ const html = await call(`/storage/v1/object/couple-media/couples/${one.coupleId}
 });
 check('a non-image upload is refused', html.status >= 400, `status ${html.status}`);
 
+console.log('Together');
+const momentA = await rpc(one.a, 'together_today');
+const momentB = await rpc(one.b, 'together_today');
+check('both partners get the same moment and question', momentA.status === 200 && momentA.json?.id && momentA.json.id === momentB.json?.id
+  && momentA.json.question?.body === momentB.json.question?.body, `${momentA.status} ${momentA.text.slice(0, 120)}`);
+const momentId = momentA.json?.id;
+const SECRET = 'live-check-secret-answer';
+const sentA = await rpc(one.a, 'together_submit', { p_moment: momentId, p_body: SECRET });
+check('an answer is accepted and its author is told it is waiting', sentA.json?.status === 'waiting' && sentA.json?.my_answer === SECRET, sentA.text.slice(0, 120));
+
+// Every way the partner, or anyone else, might try to read it before the reveal.
+const peekToday = await rpc(one.b, 'together_today');
+const peekMoment = await rpc(one.b, 'together_moment', { p_moment: momentId });
+const peekHistory = await rpc(one.b, 'together_history', {});
+check('before the reveal the partner learns only that an answer exists',
+  peekToday.json?.partner_answered === true && peekToday.json?.partner_answer === null
+  && ![peekToday.text, peekMoment.text, peekHistory.text].some((t) => t.includes(SECRET)));
+for (const table of ['together_answers', 'together_questions', 'together_settings']) {
+  const direct = await call(`/rest/v1/${table}?select=*`, { token: one.b.token });
+  check(`${table} cannot be read through the API`, direct.status >= 400 && !direct.text.includes(SECRET), `status ${direct.status}`);
+}
+const forgedAnswer = await call('/rest/v1/together_answers', { method: 'POST', token: one.b.token, body: { moment_id: momentId, user_id: one.a.id, body: 'forged' } });
+check('an answer cannot be written straight into the table', forgedAnswer.status >= 400, `status ${forgedAnswer.status}`);
+const momentRows = await call('/rest/v1/together_moments?select=*', { token: one.b.token });
+check('the readable moment row carries no answer', momentRows.status === 200 && momentRows.json.length === 1 && !momentRows.text.includes(SECRET) && !('body' in momentRows.json[0]));
+const tamperReveal = await call(`/rest/v1/together_moments?id=eq.${momentId}`, { method: 'PATCH', token: one.b.token, body: { revealed_at: new Date().toISOString() } });
+check('a moment cannot be marked revealed directly', tamperReveal.status >= 400, `status ${tamperReveal.status}`);
+const earlyReveal = await rpc(one.b, 'together_reveal', { p_moment: momentId });
+check('it cannot be opened with one answer', earlyReveal.status >= 400 && earlyReveal.text.includes('not_ready'), earlyReveal.text.slice(0, 100));
+
+const outsiderRead = await rpc(two.a, 'together_moment', { p_moment: momentId });
+const outsiderWrite = await rpc(two.a, 'together_submit', { p_moment: momentId, p_body: 'intrusion' });
+const outsiderOpen = await rpc(two.a, 'together_reveal', { p_moment: momentId });
+const outsiderRows = await call(`/rest/v1/together_moments?select=id&id=eq.${momentId}`, { token: two.a.token });
+check('another couple cannot read, answer or open it',
+  [outsiderRead, outsiderWrite, outsiderOpen].every((r) => r.status >= 400 && r.text.includes('moment_not_found')) && (outsiderRows.json ?? []).length === 0);
+const anonToday = await rpc(null, 'together_today');
+check('no token: Together is refused', anonToday.status >= 400, `status ${anonToday.status}`);
+
+const sentB = await rpc(one.b, 'together_submit', { p_moment: momentId, p_body: 'the other answer' });
+check('with both answers it is ready, and still sealed', sentB.json?.status === 'ready' && sentB.json?.partner_answer === null, sentB.text.slice(0, 120));
+const [openA, openB] = await Promise.all([
+  rpc(one.a, 'together_reveal', { p_moment: momentId }),
+  rpc(one.b, 'together_reveal', { p_moment: momentId }),
+]);
+check('opening from both phones at once gives one reveal and both answers to each',
+  openA.json?.status === 'revealed' && openA.json.partner_answer === 'the other answer'
+  && openB.json?.partner_answer === SECRET && openA.json.revealed_at === openB.json.revealed_at, `${openA.text.slice(0, 80)} ${openB.text.slice(0, 80)}`);
+const lateEdit = await rpc(one.a, 'together_submit', { p_moment: momentId, p_body: 'changed my mind' });
+check('an opened answer cannot be changed', lateEdit.status >= 400 && lateEdit.text.includes('already_revealed'));
+const savedA = await rpc(one.a, 'together_save_memory', { p_moment: momentId });
+const savedB = await rpc(one.b, 'together_save_memory', { p_moment: momentId });
+check('saving to memories from both gives one memory', savedA.status === 200 && savedA.json === savedB.json, `${savedA.text} ${savedB.text}`);
+const togetherListed = await rpc(one.b, 'together_history', {});
+check('it appears in the history with both answers', togetherListed.json?.[0]?.id === momentId && togetherListed.json[0].partner_answer === SECRET);
+
 console.log('Unlinking');
 await call('/rest/v1/notes', {
   method: 'POST', token: one.b.token, body: { couple_id: one.coupleId, author_id: one.b.id, body: 'live check: theirs' },
@@ -182,6 +238,10 @@ check('after unlinking, nothing more can be uploaded to it', uploadAfter.status 
 const exported = await rpc(one.a, 'export_my_data');
 check('export still returns what the person wrote', (exported.json?.notes ?? []).some((n) => n.body === 'live check: ours'), exported.text.slice(0, 120));
 check('export does not include what the partner wrote', !exported.text.includes('live check: theirs'));
+check('export includes the person’s own Together answer and not their partner’s',
+  exported.json?.together_answers?.[0]?.answer === SECRET && !exported.text.includes('the other answer'));
+const afterUnlink = await rpc(one.a, 'together_moment', { p_moment: momentId });
+check('after unlinking, the moment is closed to both', afterUnlink.status >= 400 && (await rpc(one.b, 'together_today')).json?.status === 'unpaired');
 
 console.log('Edge Functions');
 const purchaseNoToken = await call('/functions/v1/verify-purchase', { method: 'POST', body: { jws: 'x' } });

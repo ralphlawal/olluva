@@ -4,6 +4,12 @@ All notable changes to this project are recorded here. Format: [Keep a Changelog
 
 ## [Unreleased]
 
+### 1.1
+- **Together**: one question a day, answered separately and opened together. A card on Today leads to a dedicated screen with the question, an answer field with a draft kept on the phone, a waiting state, a deliberate "Open together" step, both answers side by side, saving to Memories, and a history of finished questions. See ADR 0011.
+- A partner's answer cannot be read before the reveal by any route; this is enforced and tested on the server, including against the hosted project.
+- Notifications for a partner answering, a moment being ready, and an optional morning reminder, each with its own switch. None contains an answer.
+- "Export my data" now includes your own answers.
+
 ### Added
 - **Backend**: Supabase schema with Row Level Security on every table; database functions for pairing, notes, reactions, memories, dates, scheduled delivery, device tokens, entitlement, export and account deletion; private storage buckets with path-scoped policies; reference-counted media purge; retention jobs.
 - **Edge Functions**: `verify-purchase`, `app-store-notifications`, `send-push`, `purge-storage`, `delete-account`.

@@ -426,6 +426,8 @@ struct NotificationSettingsView: View {
                         toggle("New notes", preferences.newNotes, id: "newNotes") { $0.newNotes = $1 }
                         toggle("Surprises arriving", preferences.surprises, id: "surprises") { $0.surprises = $1 }
                         toggle("Important dates", preferences.importantDates, id: "dates") { $0.importantDates = $1 }
+                        toggle("Together: answers and openings", preferences.together, id: "together") { $0.together = $1 }
+                        toggle("Together: a new question each morning", preferences.togetherDaily, id: "togetherDaily") { $0.togetherDaily = $1 }
                         toggle("Pairing", preferences.pairing, id: "pairing") { $0.pairing = $1 }
                         toggle("My account", preferences.account, id: "account") { $0.account = $1 }
                     }

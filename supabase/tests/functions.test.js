@@ -225,6 +225,16 @@ describe('notification wording', () => {
     assert.equal(text.body, 'Sent you something to look at.');
   });
 
+  test('together notifications never carry an answer, and open the right place', () => {
+    const answered = notificationText({ ...base, category: 'together', payload: { event: 'answered', moment_id: 'm1' }, preview: 'should never be used' });
+    assert.deepEqual(answered, { title: 'Sam', body: 'Answered today’s question. Your turn.', data: { together: '1' } });
+    const ready = notificationText({ ...base, category: 'together', payload: { event: 'ready' } });
+    assert.equal(ready.title, 'Your moment is ready');
+    assert.equal(ready.body, 'You and Sam have both answered. Open it together.');
+    assert.equal(notificationText({ ...base, category: 'together', payload: { event: 'new' } }).data.together, '1');
+    assert.equal(notificationText({ ...base, category: 'together', payload: { event: 'something-else' } }), null);
+  });
+
   test('an unnamed sender still reads naturally', () => {
     assert.equal(notificationText({ ...base, sender_name: '', category: 'new_note', payload: {} }).title, 'Your partner');
   });

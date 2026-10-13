@@ -110,6 +110,14 @@ final class DemoController {
         }
 
         let couple = world.pair(me, partner, pairedAt: ago(days: 412))
+
+        // Yesterday's question, answered by both and opened; and today's, which
+        // the partner has already answered.
+        world.answerTogether(as: me, "When you met me off the train with an umbrella.")
+        world.answerTogether(as: partner, "The pancakes on Sunday. You remembered the lemon.")
+        world.revealTogether(as: me)
+        world.ageTogether(days: 1)
+        world.answerTogether(as: partner, "Dancing in the kitchen while the pasta boiled over.")
         if premium { world.setPremium(true, for: partner) }
 
         world.deliverNote(from: partner, content: NoteContent(

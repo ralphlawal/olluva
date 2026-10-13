@@ -6,7 +6,7 @@
 export interface ClaimedNotification {
   id: number;
   user_id: string;
-  category: "new_note" | "surprise" | "important_date" | "pairing" | "account" | "sync";
+  category: "new_note" | "surprise" | "important_date" | "pairing" | "account" | "sync" | "together";
   payload: Record<string, unknown>;
   tokens: { token: string; environment: "sandbox" | "production" }[];
   widget_push?: { token: string; environment: "sandbox" | "production" }[];
@@ -54,6 +54,19 @@ export function notificationText(item: ClaimedNotification): NotificationText | 
       return item.payload.event === "space_ended"
         ? { title: "Your shared space was closed", body: "Your partner unlinked. Your account is unchanged.", data }
         : null;
+    case "together":
+      // Never what anyone wrote: answers stay private until they are revealed,
+      // and a lock screen is not the place for them afterwards either.
+      switch (item.payload.event) {
+        case "answered":
+          return { title: name, body: "Answered today’s question. Your turn.", data: { ...data, together: "1" } };
+        case "ready":
+          return { title: "Your moment is ready", body: `You and ${name} have both answered. Open it together.`, data: { ...data, together: "1" } };
+        case "new":
+          return { title: "Today’s question is here", body: "A small moment for the two of you.", data: { ...data, together: "1" } };
+        default:
+          return null;
+      }
     default:
       return null;
   }

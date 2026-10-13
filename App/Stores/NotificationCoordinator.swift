@@ -128,6 +128,7 @@ final class NotificationCoordinator: NSObject {
     nonisolated static func deepLink(from userInfo: [AnyHashable: Any]) -> DeepLink? {
         if let raw = userInfo["note_id"] as? String, let id = UUID(uuidString: raw) { return .note(id) }
         if let kind = userInfo["category"] as? String, kind == "pairing" || kind == "account" { return .home }
+        if userInfo["category"] as? String == "together" || userInfo["together"] != nil { return .together }
         return nil
     }
 }

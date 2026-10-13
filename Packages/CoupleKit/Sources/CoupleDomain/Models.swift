@@ -263,13 +263,17 @@ public struct Memory: Identifiable, Codable, Equatable, Sendable {
     public var caption: String
     public var content: NoteContent
     public var sourceNoteID: UUID?
+    /// Set when this memory is a daily question the two of you answered.
+    public var togetherMomentID: UUID?
     public var occurredOn: DayDate
     public var createdAt: Date
 
     public init(
         id: UUID, coupleID: UUID, createdBy: UUID?, kind: Kind, title: String = "", caption: String = "",
-        content: NoteContent = NoteContent(), sourceNoteID: UUID? = nil, occurredOn: DayDate, createdAt: Date
+        content: NoteContent = NoteContent(), sourceNoteID: UUID? = nil, togetherMomentID: UUID? = nil,
+        occurredOn: DayDate, createdAt: Date
     ) {
+        self.togetherMomentID = togetherMomentID
         self.id = id
         self.coupleID = coupleID
         self.createdBy = createdBy
@@ -410,11 +414,18 @@ public struct NotificationPreferences: Codable, Equatable, Sendable {
     public var pairing: Bool
     public var account: Bool
     public var showPreviews: Bool
+    /// Your partner answered, or a moment is ready to open.
+    public var together: Bool
+    /// The morning reminder that there is a new question.
+    public var togetherDaily: Bool
 
     public init(
         newNotes: Bool = true, surprises: Bool = true, importantDates: Bool = true,
-        pairing: Bool = true, account: Bool = true, showPreviews: Bool = false
+        pairing: Bool = true, account: Bool = true, showPreviews: Bool = false,
+        together: Bool = true, togetherDaily: Bool = true
     ) {
+        self.together = together
+        self.togetherDaily = togetherDaily
         self.newNotes = newNotes
         self.surprises = surprises
         self.importantDates = importantDates
@@ -426,6 +437,77 @@ public struct NotificationPreferences: Codable, Equatable, Sendable {
 
 public enum PushEnvironment: String, Sendable {
     case sandbox, production
+}
+
+// MARK: - Together
+
+/// One day's shared question and where the two of you have got to with it.
+///
+/// What this holds is exactly what the server chose to send to this person:
+/// `partnerAnswer` is nil until the moment has been revealed, however far
+/// along it is, because the server does not send it before then.
+public struct TogetherMoment: Identifiable, Codable, Equatable, Sendable {
+    public enum Status: String, Codable, Sendable {
+        /// You have not answered yet.
+        case open
+        /// Your answer is in; your partner's is not.
+        case waiting
+        /// Both answers are in and neither of you has opened it.
+        case ready
+        case revealed
+    }
+
+    public struct Question: Codable, Equatable, Sendable {
+        public let id: Int
+        public let category: String
+        public let body: String
+
+        public init(id: Int, category: String, body: String) {
+            self.id = id
+            self.category = category
+            self.body = body
+        }
+    }
+
+    public let id: UUID
+    public var day: DayDate
+    public var question: Question
+    public var status: Status
+    public var myAnswer: String?
+    public var partnerAnswered: Bool
+    public var partnerAnswer: String?
+    public var revealedAt: Date?
+    /// Set when the moment is kept in the scrapbook.
+    public var memoryID: UUID?
+
+    public init(
+        id: UUID, day: DayDate, question: Question, status: Status, myAnswer: String? = nil,
+        partnerAnswered: Bool = false, partnerAnswer: String? = nil, revealedAt: Date? = nil, memoryID: UUID? = nil
+    ) {
+        self.id = id
+        self.day = day
+        self.question = question
+        self.status = status
+        self.myAnswer = myAnswer
+        self.partnerAnswered = partnerAnswered
+        self.partnerAnswer = partnerAnswer
+        self.revealedAt = revealedAt
+        self.memoryID = memoryID
+    }
+}
+
+public enum TogetherRules {
+    /// Mirrored by the check constraint on `together_answers.body`.
+    public static let answerLimit = 500
+
+    public static func cleaned(_ answer: String) -> String {
+        answer.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    public static func isValid(_ answer: String) -> Bool {
+        let text = cleaned(answer)
+        return !text.isEmpty && text.count <= answerLimit
+    }
 }
 
 // MARK: - Entitlement

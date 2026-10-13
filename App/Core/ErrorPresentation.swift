@@ -33,6 +33,12 @@ extension AppError {
         case .mediaUnreadable: "That image couldn’t be opened."
         case .uploadFailed: "The upload didn’t finish. Try again."
 
+        case .momentUnavailable: "That question isn’t available any more."
+        case .momentNotReady: "This opens once you’ve both answered."
+        case .momentClosed: "That day has passed. There’s a new question waiting."
+        case .momentAlreadyRevealed: "This has already been opened, so the answers can’t change now."
+        case .invalidAnswer(let limit): "Write something, up to \(limit) characters."
+
         case .deliveryTooSoon: "Pick a time at least a few minutes from now."
         case .deliveryTooFar: "Pick a time within the next two years."
         case .scheduleNotEditable: "This has already been delivered or cancelled."

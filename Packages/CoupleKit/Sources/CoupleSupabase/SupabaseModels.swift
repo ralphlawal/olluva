@@ -91,6 +91,7 @@ struct MemoryRow: Decodable {
     let photo_path: String?
     let drawing_path: String?
     let source_note_id: UUID?
+    let together_moment_id: UUID?
     let occurred_on: DayDate
     let created_at: Date
 
@@ -99,7 +100,8 @@ struct MemoryRow: Decodable {
             id: id, coupleID: couple_id, createdBy: created_by, kind: Memory.Kind(rawValue: kind) ?? .moment,
             title: title, caption: caption,
             content: NoteContent(body: body, style: style, photoPath: photo_path, drawingPath: drawing_path),
-            sourceNoteID: source_note_id, occurredOn: occurred_on, createdAt: created_at
+            sourceNoteID: source_note_id, togetherMomentID: together_moment_id,
+            occurredOn: occurred_on, createdAt: created_at
         )
     }
 }
@@ -222,8 +224,12 @@ struct PreferencesRow: Codable {
     let pairing: Bool
     let account: Bool
     let show_previews: Bool
+    let together: Bool
+    let together_daily: Bool
 
     init(_ preferences: NotificationPreferences) {
+        together = preferences.together
+        together_daily = preferences.togetherDaily
         new_notes = preferences.newNotes
         surprises = preferences.surprises
         important_dates = preferences.importantDates
@@ -235,9 +241,59 @@ struct PreferencesRow: Codable {
     var model: NotificationPreferences {
         NotificationPreferences(
             newNotes: new_notes, surprises: surprises, importantDates: important_dates,
-            pairing: pairing, account: account, showPreviews: show_previews
+            pairing: pairing, account: account, showPreviews: show_previews,
+            together: together, togetherDaily: together_daily
         )
     }
+}
+
+/// What a Together function returns: a moment as this person may see it, or
+/// just `{"status": "unpaired"}`.
+struct TogetherPayload: Decodable {
+    struct Question: Decodable {
+        let id: Int
+        let category: String
+        let body: String
+    }
+
+    let status: String
+    let id: UUID?
+    let day: DayDate?
+    let question: Question?
+    let my_answer: String?
+    let partner_answered: Bool?
+    let partner_answer: String?
+    let revealed_at: Date?
+    let memory_id: UUID?
+
+    var model: TogetherMoment? {
+        guard let id, let day, let question, let status = TogetherMoment.Status(rawValue: status) else { return nil }
+        return TogetherMoment(
+            id: id, day: day,
+            question: .init(id: question.id, category: question.category, body: question.body),
+            status: status, myAnswer: my_answer, partnerAnswered: partner_answered ?? false,
+            partnerAnswer: partner_answer, revealedAt: revealed_at, memoryID: memory_id
+        )
+    }
+
+    func required() throws -> TogetherMoment {
+        guard let model else { throw AppError.momentUnavailable }
+        return model
+    }
+}
+
+struct TogetherSubmitParams: Encodable {
+    let p_moment: UUID
+    let p_body: String
+}
+
+struct TogetherMomentParams: Encodable {
+    let p_moment: UUID
+}
+
+struct TogetherHistoryParams: Encodable {
+    let p_before: String?
+    let p_limit: Int
 }
 
 struct EntitlementPayload: Decodable {
