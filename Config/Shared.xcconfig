@@ -8,8 +8,8 @@ APP_BUNDLE_ID = com.example.couplenotes
 APP_GROUP_ID = group.com.example.couplenotes
 DEVELOPMENT_TEAM =
 
-MARKETING_VERSION = 1.0
-CURRENT_PROJECT_VERSION = 3
+MARKETING_VERSION = 1.1
+CURRENT_PROJECT_VERSION = 5
 
 // --- Backend (empty = not configured) --------------------------------------
 // Host only, no scheme: the app always connects over https.

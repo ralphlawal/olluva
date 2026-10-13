@@ -58,7 +58,7 @@ These are implemented and their logic is tested locally, but they need credentia
 | Partner unlocking from a purchase | Deployed `verify-purchase` | Database entitlement rules tested |
 
 ### Verified against the hosted project
-Schema and policies (47 live API checks), anonymous sign-in, pairing, notes, Realtime delivery, private media through the real Storage API, memories, dates, scheduling, themes, notification preferences, device tokens, avatars and export, all through the app's own Supabase client. See TESTING.md.
+Schema and policies (66 live API checks), anonymous sign-in, pairing, notes, Realtime delivery, private media through the real Storage API, memories, dates, scheduling, themes, notification preferences, device tokens, avatars and export, all through the app's own Supabase client. See TESTING.md.
 
 ### Not built
 - End-to-end encryption (see ADR 0007). The app does not claim it.

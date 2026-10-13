@@ -2,14 +2,14 @@
 
 Four suites. Each can be run by itself; none needs network access, Docker, or an Apple or Supabase account.
 
-## Latest results (10 October 2026)
+## Latest results (13 October 2026)
 
 | Suite | Runs on | Tests | Result |
 | --- | --- | --- | --- |
-| Database security and Edge Function logic | Node 24 + embedded Postgres 17 | 123 | 123 passed |
-| Swift package (`CoupleKit`) | macOS, `swift test` | 98 | 97 passed, 1 skipped (live-server test, needs credentials) |
-| App unit tests | iPhone 17 simulator, iOS 26.5 | 55 | 48 passed, **7 skipped** |
-| UI tests | iPhone 17 simulator, iOS 26.5 | 27 | 27 passed |
+| Database security and Edge Function logic | Node 24 + embedded Postgres 17 | 143 | 143 passed |
+| Swift package (`CoupleKit`) | macOS, `swift test` | 105 | 104 passed, 1 skipped (live-server test, needs credentials) |
+| App unit tests | iPhone 17 simulator, iOS 26.5 | 68 | 61 passed, **7 skipped** |
+| UI tests | iPhone 17 simulator, iOS 26.5 | 31 | 31 passed |
 
 Builds: Debug and Release both build for the simulator, including the widget extension.
 
@@ -19,7 +19,7 @@ Builds: Debug and Release both build for the simulator, including the widget ext
 Two suites talk to the real Supabase project. Both need only the publishable key, both create anonymous identities and rows, and both are skipped or not run by default.
 
 ```sh
-# 47 checks through the public API, as an attacker would reach it
+# 66 checks through the public API, as an attacker would reach it
 cd supabase/tests
 SUPABASE_HOST=<ref>.supabase.co SUPABASE_KEY=<publishable key> node live-check.mjs
 
@@ -27,7 +27,7 @@ SUPABASE_HOST=<ref>.supabase.co SUPABASE_KEY=<publishable key> node live-check.m
 cd Packages/CoupleKit
 SUPABASE_HOST=<ref>.supabase.co SUPABASE_KEY=<publishable key> swift test --filter CoupleSupabaseLiveTests
 ```
-Last run 11 October 2026 against the `olluva` project: 47 of 47 (the client test last passed on 10 October). The checks now call `verify-purchase` and `delete-account` as a signed-in person and delete their own identities at the end; before that, nothing exercised those functions on the real runtime, which hid two faults that the local tests could not see (see CHANGELOG). The client test has found two real bugs, both fixed: paging back through notes returned the boundary note twice, and restarting the live connection for the same space (which the app does when a partner joins) silently stopped live updates.
+Last run 13 October 2026 against the `olluva` project: 66 of 66, including the Together privacy rules (a partner's answer unreadable before the reveal by RPC or by table; cross-couple denial; simultaneous reveals) (the client test last passed on 10 October). The checks now call `verify-purchase` and `delete-account` as a signed-in person and delete their own identities at the end; before that, nothing exercised those functions on the real runtime, which hid two faults that the local tests could not see (see CHANGELOG). The client test has found two real bugs, both fixed: paging back through notes returned the boundary note twice, and restarting the live connection for the same space (which the app does when a partner joins) silently stopped live updates.
 
 To remove what they create without touching real users (SQL editor, as an administrator):
 ```sql
