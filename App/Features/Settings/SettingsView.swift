@@ -4,10 +4,9 @@ import PhotosUI
 import StoreKit
 import SwiftUI
 
-/// The public site, served for now from GitHub Pages. When www.olluva.app
-/// is pointed at it, only `site` needs to change.
+/// The public site, www.olluva.app, served by Vercel from `site/`.
 enum AppLinks {
-    static let site = URL(string: "https://ralphlawal.github.io/olluva/")!
+    static let site = URL(string: "https://www.olluva.app/")!
     static let privacy = site.appendingPathComponent("privacy/")
     static let terms = site.appendingPathComponent("terms/")
     static let support = site.appendingPathComponent("support/")

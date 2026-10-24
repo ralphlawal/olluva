@@ -53,8 +53,8 @@ Olluva is free to use. Premium adds more themes and your own accent colour, ever
 
 Premium is an auto-renewing subscription, monthly or yearly. Payment is charged to your Apple ID at confirmation of purchase. It renews automatically unless cancelled at least 24 hours before the end of the period. Manage or cancel in your Apple ID settings.
 
-Terms: https://ralphlawal.github.io/olluva/terms/
-Privacy: https://ralphlawal.github.io/olluva/privacy/
+Terms of Use (EULA): https://www.olluva.app/terms/
+Privacy Policy: https://www.olluva.app/privacy/
 ```
 
 ## App information
@@ -64,12 +64,12 @@ Privacy: https://ralphlawal.github.io/olluva/privacy/
 | Primary category | Lifestyle |
 | Secondary category | Social Networking |
 | Content rights | Does not contain third-party content |
-| Privacy Policy URL | https://ralphlawal.github.io/olluva/privacy/ |
-| Support URL | https://ralphlawal.github.io/olluva/support/ |
-| Marketing URL | https://ralphlawal.github.io/olluva/ |
+| Privacy Policy URL | https://www.olluva.app/privacy/ |
+| Support URL | https://www.olluva.app/support/ |
+| Marketing URL | https://www.olluva.app/ |
 | Copyright | 2026, followed by your legal name |
 
-Replace the three URLs with the olluva.app ones once the domain works.
+The site is also still reachable at https://ralphlawal.github.io/olluva/, which builds 1.0 (3) and 1.0 (6) link to.
 
 ## Age rating questionnaire
 

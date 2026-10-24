@@ -63,4 +63,4 @@ End-to-end encryption (ADR 0007) · iPad layout · camera capture (the system ph
 1. **Product name: decided, Olluva.** Still to do: confirm trademark and App Store name availability.
 2. **Pricing** and whether to offer an introductory offer.
 3. **Bundle identifier, App Group and URL scheme** (`olluva://`). Universal Links need a domain.
-4. **Privacy Policy, Terms and support pages.** The app links to `/privacy/`, `/terms/` and `/support/` on https://ralphlawal.github.io/olluva/, published from `site/`. The policy and terms are drafts that describe the app accurately but have not had legal review, and name no operator; the support page lists no contact address yet. Both must be settled before release.
+4. **Privacy Policy, Terms and support pages.** The app links to `/privacy/`, `/terms/` and `/support/` on https://www.olluva.app, served by Vercel from `site/` (builds up to 1.0 (6) link to the same pages on https://ralphlawal.github.io/olluva/, which stays up). The policy and terms are drafts that describe the app accurately but have not had legal review, and name no operator; the support page lists no contact address yet. Both must be settled before release.
