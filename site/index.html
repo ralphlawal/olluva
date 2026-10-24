@@ -2,38 +2,332 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Olluva — a private space for two</title>
-<meta name="description" content="Olluva is a private space for two. Leave each other notes, drawings and photos that show up on each other's Home Screen.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Olluva — little notes for the one you love</title>
+<meta name="description" content="Olluva is a private space for two on iPhone. Leave each other notes, drawings and photos that appear right on each other’s Home Screen. No account needed.">
+<meta name="theme-color" content="#faf7f2">
+<link rel="canonical" href="https://www.olluva.app/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.olluva.app/">
+<meta property="og:title" content="Olluva — little notes for the one you love">
+<meta property="og:description" content="A private space for two. Notes, drawings and photos that appear on each other’s Home Screen.">
+<meta property="og:image" content="https://www.olluva.app/assets/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="stylesheet" href="styles.css">
+<script src="site.js" defer></script>
 </head>
 <body>
-<header class="site"><div class="wrap">
-  <a class="brand" href="./">Olluva</a>
-  <nav><a href="privacy/">Privacy</a><a href="terms/">Terms</a><a href="support/">Support</a></nav>
-</div></header>
-<main class="wrap">
+<a class="skip" href="#main">Skip to content</a>
 
-<div class="notes" aria-hidden="true">
-  <div class="note a">Dinner at ours tonight?</div>
-  <div class="note b">Good luck today.<br>You’ve got this.</div>
-  <div class="note c">Thinking of you</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="Olluva home">
+      <img src="assets/icon-512.png" alt="" width="34" height="34">
+      <span>Olluva</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a class="text-link" href="#how">How it works</a>
+      <a class="text-link" href="#widgets">Widgets</a>
+      <a class="text-link" href="#privacy">Privacy</a>
+      <a class="text-link" href="#questions">Questions</a>
+      <span class="pill dark header-cta"><span class="dot" aria-hidden="true"></span>Coming soon on iPhone</span>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- Hero -->
+<section class="hero">
+  <div class="wrap">
+    <div class="intro">
+      <p class="eyebrow">For two people, and no one else</p>
+      <h1>Little notes from your person, <em>right on your Home Screen.</em></h1>
+      <p class="lead">Olluva is a private space for the two of you. Write a note, draw something or send a photo, and it appears on their widget, usually within seconds, without them opening a thing.</p>
+      <div class="cta-row">
+        <span class="pill dark"><span class="dot" aria-hidden="true"></span>Coming soon to the App Store</span>
+        <a class="link" href="#how">See how it works <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="reassure">
+        <span>No account to make</span>
+        <span>No ads, no tracking</span>
+        <span>Free to use</span>
+      </div>
+    </div>
+
+    <div class="stage" aria-hidden="true">
+      <div class="note n1 float" style="--d:-2s" data-depth="0.08">Dinner at ours tonight?</div>
+      <div class="phone float">
+        <img src="assets/screens/01-today.jpg" alt="" width="660" height="1435">
+      </div>
+      <div class="note n2 float" style="--d:-5s" data-depth="0.16">Good luck today. You’ve got this.</div>
+      <div class="note n3 float" style="--d:-1s" data-depth="0.12">Thinking of you
+        <svg class="heart" viewBox="0 0 26 24"><path d="M13 23S1 15.6 1 7.9C1 4 4 1 7.6 1c2.3 0 4.3 1.2 5.4 3 1.1-1.8 3.1-3 5.4-3C22 1 25 4 25 7.9 25 15.6 13 23 13 23z" fill="#c9566b"/></svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Facts -->
+<div class="facts">
+  <div class="wrap">
+    <div class="fact"><strong>Two people</strong><span>A space holds exactly two</span></div>
+    <div class="fact"><strong>Seconds</strong><span>Usually, from sending to their widget</span></div>
+    <div class="fact"><strong>No sign-up</strong><span>Just your name</span></div>
+    <div class="fact"><strong>iPhone</strong><span>Built natively for iOS</span></div>
+  </div>
 </div>
-<h1>Make your favourite person part of your everyday.</h1>
-<p class="lead">Olluva is a private space for the two of you. Leave each other notes, drawings and photos, and see them appear on each other’s Home Screen.</p>
-<div class="points">
-  <div><h3>Notes that look the way you mean them</h3><p>Write, draw, or send a photo, on paper you choose.</p></div>
-  <div><h3>Right on the Home Screen</h3><p>A widget shows your partner’s latest note without opening anything.</p></div>
-  <div><h3>Surprises, on time</h3><p>Write a note now and have it arrive later, even if your phone is off.</p></div>
-  <div><h3>No account needed</h3><p>No email, no password. Open it, type your name, invite your person.</p></div>
-  <div><h3>Private by design</h3><p>A space has exactly two members. Notifications don’t show what a note says unless you turn that on.</p></div>
-</div>
-<p class="muted">Olluva is for iPhone and is coming to the App Store.</p>
+
+<!-- How it works -->
+<section class="section" id="how">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">How it works</p>
+      <h2>Ready in under a minute.</h2>
+      <p>No email, no password and no profile to fill in. Olluva starts with your name and the one person you want to share it with.</p>
+    </div>
+    <div class="steps">
+      <article class="step reveal">
+        <h3>Type your name</h3>
+        <p>Open Olluva and tell it what your partner calls you. That’s the whole of setting up.</p>
+      </article>
+      <article class="step reveal" style="--delay:.1s">
+        <h3>Invite your person</h3>
+        <p>Send them a code or a link. It works once, for one person, and then your space is closed to everyone else.</p>
+        <span class="code">K7QP2-HX4WM</span>
+      </article>
+      <article class="step reveal" style="--delay:.2s">
+        <h3>Leave them a note</h3>
+        <p>Words, a drawing or a photo. It lands on their Home Screen, and theirs lands on yours.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- Widgets -->
+<section class="section band" id="widgets">
+  <div class="wrap widgets">
+    <div class="home-screen reveal from-left" aria-hidden="true">
+      <img class="w-large" src="assets/widgets/large.png" alt="" width="724" height="760">
+      <div class="live">
+        <span class="new"></span>
+        <div class="slide on">Miss you already</div>
+        <div class="slide">Home by seven. Save me some!</div>
+        <div class="slide">Look up. The moon is huge tonight.</div>
+      </div>
+      <img src="assets/widgets/small-bold.png" alt="" width="760" height="760">
+      <div class="apps"><i></i><i class="olluva"></i><i></i><i></i></div>
+    </div>
+    <div>
+      <div class="section-head reveal">
+        <p class="eyebrow">Widgets</p>
+        <h2>It arrives where they’ll see it.</h2>
+        <p>Every glance at their phone is a chance to find you there. Olluva puts the newest note on their Home Screen the moment you send it.</p>
+      </div>
+      <div class="widget-points">
+        <div class="reveal"><h3>Small, medium and large</h3><p>From a single line to the whole note, drawing, photo and all.</p></div>
+        <div class="reveal" style="--delay:.08s"><h3>Discreet on the Lock Screen</h3><p>Lock Screen widgets can say a note is waiting without showing what it says.</p></div>
+        <div class="reveal" style="--delay:.16s"><h3>Updates on its own</h3><p>No need to open the app. The widget usually refreshes within seconds of a new note arriving.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section" id="features">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <p class="eyebrow">Everything a note can be</p>
+      <h2>Made the way you’d say it.</h2>
+      <p>Small enough for a quick hello, personal enough for the things that matter.</p>
+    </div>
+
+    <div class="feature">
+      <div class="copy reveal">
+        <p class="eyebrow">Write</p>
+        <h3>Your words, on paper you choose.</h3>
+        <p>Pick a paper, an ink and handwriting, add a sticker or two, and see exactly how it will look on their screen before you send it.</p>
+        <ul>
+          <li>Papers, inks and lettering to match the moment</li>
+          <li>Templates for good mornings, good luck and anniversaries</li>
+          <li>Drafts are kept if you get interrupted</li>
+        </ul>
+      </div>
+      <div class="visual reveal from-right" style="--tint:var(--lilac)">
+        <div class="phone"><img src="assets/screens/02-write.jpg" alt="Writing a note in Olluva, choosing paper, ink and handwriting" width="660" height="1435" loading="lazy"></div>
+      </div>
+    </div>
+
+    <div class="feature flip">
+      <div class="copy reveal">
+        <p class="eyebrow">Preview</p>
+        <h3>See it the way they will.</h3>
+        <p>Before you send, see your note exactly as it will look to them: in the app, and on their Home Screen.</p>
+        <ul>
+          <li>Draw with your finger or Apple Pencil</li>
+          <li>Send a photo, cropped to fit</li>
+          <li>Plan a surprise to arrive later, even if your phone is off</li>
+        </ul>
+      </div>
+      <div class="visual reveal from-left" style="--tint:var(--blush)">
+        <div class="phone"><img src="assets/screens/preview.jpg" alt="Previewing how a note will look on your partner’s phone and Home Screen" width="660" height="1435" loading="lazy"></div>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="copy reveal">
+        <p class="eyebrow">Memories</p>
+        <h3>Keep the ones you love.</h3>
+        <p>Save a note you never want to lose, or add a moment of your own with a photo and a date. Together they become a scrapbook you share.</p>
+      </div>
+      <div class="visual reveal from-right" style="--tint:#f6efe6">
+        <div class="phone"><img src="assets/screens/04-memories.jpg" alt="The shared Memories scrapbook in Olluva" width="660" height="1435" loading="lazy"></div>
+      </div>
+    </div>
+
+    <div class="feature flip">
+      <div class="copy reveal">
+        <p class="eyebrow">Dates</p>
+        <h3>Never miss the ones that matter.</h3>
+        <p>Anniversaries, birthdays and firsts, with a reminder on the morning. Keep a date to yourself when you’re planning a surprise.</p>
+      </div>
+      <div class="visual reveal from-left" style="--tint:#dfe8dc">
+        <div class="phone"><img src="assets/screens/05-dates.jpg" alt="Important dates and reminders in Olluva" width="660" height="1435" loading="lazy"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Privacy -->
+<section class="section" id="privacy" style="background:var(--paper-deep)">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <p class="eyebrow">Private by design</p>
+      <h2>Between the two of you.</h2>
+      <p>Olluva is built so that what you share stays where you meant it to go.</p>
+    </div>
+    <div class="cards">
+      <article class="card reveal">
+        <div class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div>
+        <h3>No account</h3>
+        <p>No email, no phone number, no password. Back up with your Apple ID only if you want to.</p>
+      </article>
+      <article class="card reveal" style="--delay:.08s">
+        <div class="icon"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+        <h3>Just the two of you</h3>
+        <p>A space has exactly two people. Every request is checked on our server against who is in it.</p>
+      </article>
+      <article class="card reveal" style="--delay:.16s">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></div>
+        <h3>Quiet notifications</h3>
+        <p>Notifications say who wrote, not what they wrote, unless you choose to show previews.</p>
+      </article>
+      <article class="card reveal" style="--delay:.24s">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></div>
+        <h3>Yours to keep</h3>
+        <p>Export everything you’ve written, or delete it all, from Settings at any time. No ads. No tracking.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- Premium -->
+<section class="section" id="premium">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <p class="eyebrow">Free and Premium</p>
+      <h2>Free to use. One plan for both of you.</h2>
+      <p>Everything you need to stay close is free. Premium adds more ways to make it yours, and one subscription covers you both.</p>
+    </div>
+    <div class="plans">
+      <article class="plan reveal">
+        <h3>Free</h3>
+        <p class="price">Always</p>
+        <ul>
+          <li>Unlimited notes, drawings and photos</li>
+          <li>Home Screen and Lock Screen widgets</li>
+          <li>Four papers, seven inks and six stickers</li>
+          <li>A scrapbook of up to 30 memories</li>
+          <li>One surprise waiting at a time</li>
+        </ul>
+      </article>
+      <article class="plan premium reveal" style="--delay:.1s">
+        <h3>Premium</h3>
+        <p class="price">Monthly or yearly, for both of you</p>
+        <ul>
+          <li>Every paper, ink and sticker</li>
+          <li>Marker and pencil for drawing</li>
+          <li>Four more themes, and your own colour</li>
+          <li>Up to 2,000 memories</li>
+          <li>Up to 50 surprises waiting at once</li>
+          <li>Templates and extra widget styles</li>
+        </ul>
+      </article>
+    </div>
+    <p class="plans-note reveal">Prices are shown in your local currency on the App Store. Cancel at any time in your Apple ID settings.</p>
+  </div>
+</section>
+
+<!-- Questions -->
+<section class="section" id="questions" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <p class="eyebrow">Questions</p>
+      <h2>Good to know.</h2>
+    </div>
+    <div class="faq reveal">
+      <details>
+        <summary>Do we both need the app?</summary>
+        <div class="answer"><p>Yes. Olluva is a space for two iPhones. One of you invites the other with a code or a link, and from then on it’s just the two of you.</p></div>
+      </details>
+      <details>
+        <summary>Why is there no account?</summary>
+        <div class="answer"><p>Because you shouldn’t need one to leave someone a note. Olluva creates a private identity on your phone. If you’d like to keep your space when you change phones, you can back it up with your Apple ID in Settings.</p></div>
+      </details>
+      <details>
+        <summary>Can anyone else read our notes?</summary>
+        <div class="answer"><p>Not through the app. A space has exactly two members, and our server checks every request against them. Notes are encrypted in transit and at rest. They are not end-to-end encrypted, which is what lets them reach your widget and arrive on schedule; our <a href="privacy/">privacy policy</a> explains this plainly.</p></div>
+      </details>
+      <details>
+        <summary>Does it work on Android?</summary>
+        <div class="answer"><p>Not yet. Olluva is made for iPhone and its widgets, and both of you will need an iPhone to use it.</p></div>
+      </details>
+      <details>
+        <summary>Do we both need to pay for Premium?</summary>
+        <div class="answer"><p>No. If either of you subscribes, you both get everything in Premium.</p></div>
+      </details>
+      <details>
+        <summary>What happens if we stop using it?</summary>
+        <div class="answer"><p>Either of you can unlink at any time, which closes the space for both of you. You can export what you wrote first, and you can delete everything whenever you like.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- Closing -->
+<section class="closing">
+  <div class="wrap reveal">
+    <img src="assets/icon-512.png" alt="" width="96" height="96">
+    <h2>Coming soon to iPhone.</h2>
+    <p>A small thing, every day, for the person who matters most.</p>
+    <span class="pill dark"><span class="dot" aria-hidden="true"></span>Coming soon to the App Store</span>
+  </div>
+</section>
 
 </main>
-<footer class="site"><div class="wrap">
-  <a href="privacy/">Privacy</a><a href="terms/">Terms</a><a href="support/">Support</a>
-  <p>&copy; 2026 Olluva.</p>
-</div></footer>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="assets/icon-512.png" alt="" width="26" height="26"><span>Olluva</span></a>
+    <nav aria-label="Footer">
+      <a href="privacy/">Privacy</a>
+      <a href="terms/">Terms</a>
+      <a href="support/">Support</a>
+    </nav>
+    <p>© 2026 Olluva. Made in Ireland.</p>
+  </div>
+</footer>
 </body>
 </html>

@@ -2,20 +2,26 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Privacy Policy — Olluva</title>
-<meta name="description" content="Olluva is a private space for two. Leave each other notes, drawings and photos that show up on each other's Home Screen.">
+<meta name="description" content="Olluva is a private space for two on iPhone. Leave each other notes, drawings and photos that appear on each other’s Home Screen.">
+<link rel="canonical" href="https://www.olluva.app/privacy/">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
 <link rel="stylesheet" href="../styles.css">
+<script src="../site.js" defer></script>
 </head>
-<body>
-<header class="site"><div class="wrap">
-  <a class="brand" href="../">Olluva</a>
-  <nav><a href="../privacy/" aria-current="page">Privacy</a><a href="../terms/">Terms</a><a href="../support/">Support</a></nav>
-</div></header>
-<main class="wrap">
-
+<body class="legal">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../" aria-label="Olluva home"><img src="../assets/icon-512.png" alt="" width="34" height="34"><span>Olluva</span></a>
+    <nav class="nav" aria-label="Main"><a href="../privacy/" aria-current="page">Privacy</a><a href="../terms/">Terms</a><a href="../support/">Support</a></nav>
+  </div>
+</header>
+<main id="main">
 <h1>Privacy Policy</h1>
-<p class="muted">Last updated 10 October 2026</p>
+<p class="muted">Last updated 24 October 2026</p>
 <p>Olluva is made and operated by Ralph Lawal, an independent developer based in Ireland (“we”, “us”).</p>
 
 <h2>The short version</h2>
@@ -27,7 +33,7 @@
 </ul>
 
 <h2>What we store</h2>
-<table>
+<div class="table-scroll"><table>
 <tr><th>What</th><th>Why</th></tr>
 <tr><td>An anonymous identifier for your phone’s identity</td><td>So the server knows which two phones share a space</td></tr>
 <tr><td>The name you type, and a profile picture if you add one</td><td>Shown to your partner</td></tr>
@@ -39,7 +45,7 @@
 <tr><td>Your notification preferences</td><td>To respect them</td></tr>
 <tr><td>Subscription status, if you buy Premium</td><td>To unlock Premium for you and your partner</td></tr>
 <tr><td>If you choose to back up: the identifier Apple gives us for your Apple ID</td><td>So you can restore your space on another phone</td></tr>
-</table>
+</table></div>
 <p>Photos are re-encoded on your phone before upload, which removes embedded details such as the location where they were taken. The system photo picker is used, so the app only ever receives the photo you choose.</p>
 
 <h2>What we don’t collect</h2>
@@ -52,11 +58,11 @@
 <p>Notifications and Lock Screen widgets do not show what a note says unless you turn that on. Notifications are delivered through Apple, so when previews are on, the preview text passes through Apple’s notification service.</p>
 
 <h2>Companies that process data for us</h2>
-<table>
+<div class="table-scroll"><table>
 <tr><th>Company</th><th>What for</th></tr>
 <tr><td>Supabase</td><td>Database, file storage and server functions, hosted in the European Union (Ireland)</td></tr>
 <tr><td>Apple</td><td>Push notifications, in-app purchases, and Sign in with Apple if you back up</td></tr>
-</table>
+</table></div>
 
 <h2>How long we keep things</h2>
 <ul>
@@ -85,11 +91,13 @@
 
 <h2>Contact</h2>
 <p>Write to <a href="mailto:hello@olluva.app">hello@olluva.app</a>, or see the <a href="../support/">support page</a>.</p>
-
 </main>
-<footer class="site"><div class="wrap">
-  <a href="../privacy/">Privacy</a><a href="../terms/">Terms</a><a href="../support/">Support</a>
-  <p>&copy; 2026 Olluva.</p>
-</div></footer>
+<footer class="site-footer">
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../assets/icon-512.png" alt="" width="26" height="26"><span>Olluva</span></a>
+    <nav aria-label="Footer"><a href="../privacy/">Privacy</a><a href="../terms/">Terms</a><a href="../support/">Support</a></nav>
+    <p>© 2026 Olluva. Made in Ireland.</p>
+  </div>
+</footer>
 </body>
 </html>
