@@ -65,6 +65,34 @@ describe('review partner', () => {
     assert.equal((await db.query(reviewer, 'select id from public.notes where couple_id = $1', [second.space])).length, 0);
   });
 
+  test('the demo partner answers the daily question so a reviewer can open it', async () => {
+    const { space } = await provision('TOGR2345AB');
+    const reviewer = await db.createUser('Reviewer');
+    await db.call(reviewer, 'select public.accept_invitation($1)', ['TOGR2345AB']);
+    const moment = await db.call(reviewer, 'select public.together_today()');
+    assert.equal(moment.partner_answered, false);
+
+    await tick();
+    const after = await db.call(reviewer, 'select public.together_today()');
+    assert.equal(after.partner_answered, true);
+    assert.equal(after.partner_answer, null, 'still sealed until opened');
+    await tick();
+    const answers = await db.admin('select count(*)::int as n from public.together_answers where moment_id = $1', [moment.id]);
+    assert.equal(answers.rows[0].n, 1, 'answered once');
+
+    const ready = await db.call(reviewer, 'select public.together_submit($1, $2)', [moment.id, 'mine']);
+    assert.equal(ready.status, 'ready');
+    const opened = await db.call(reviewer, 'select public.together_reveal($1)', [moment.id]);
+    assert.ok(opened.partner_answer.length > 10);
+    assert.ok(space);
+
+    // A real couple's question is never touched.
+    const real = await db.createCouple();
+    const theirs = await db.call(real.a, 'select public.together_today()');
+    await tick();
+    assert.equal((await db.call(real.a, 'select public.together_moment($1)', [theirs.id])).partner_answered, false);
+  });
+
   test('replies are bounded', async () => {
     const { space } = await provision(OTHER);
     const reviewer = await db.createUser('Chatty');
