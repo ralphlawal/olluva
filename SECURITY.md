@@ -27,7 +27,6 @@ The content is intimate. People have no account: each phone holds an anonymous i
 | Taking over a space through backup | An Apple ID can be linked to one identity only; linking is done by Supabase Auth from an Apple-signed token | `LocalBackendTests`; not yet tested against Supabase |
 | Data on the device | Session in the Keychain (SDK default). Caches, outbox, drafts and the widget snapshot use file protection until first unlock, and are wiped on sign-out, unlink and deletion. The invitation code is kept in the Keychain, this device only. | `NotesStoreTests`, `WidgetSnapshotTests` |
 | Widget credential | The widget and notification extension hold a separate token that can only read what the widget displays. Stored as a hash, revocable, removed on sign-out and with the account, useless after unlinking (ADR 0009) | `accounts.test.js` "widget tokens" |
-| Daily answers | A partner's answer cannot be read before the reveal by any route: the answers table has no API privileges, and the functions that return a moment include the partner's answer only when it is revealed. Reveal requires both answers and is decided under a row lock. Notifications carry no answer text (ADR 0011) | `together.test.js`; `live-check.mjs` "Together" against the hosted project |
 | Logs | App and function logs carry event names and codes only. `Diagnostics` and `log()` take no user content. | Code review |
 
 ## What is not claimed

@@ -33,15 +33,6 @@ public enum AppError: Error, Equatable, Sendable {
     case mediaUnreadable
     case uploadFailed
 
-    // Together
-    case momentUnavailable
-    /// Both answers are needed before a moment can be opened.
-    case momentNotReady
-    /// The day has passed.
-    case momentClosed
-    case momentAlreadyRevealed
-    case invalidAnswer(limit: Int)
-
     // Scheduling
     case deliveryTooSoon
     case deliveryTooFar
@@ -94,11 +85,6 @@ public enum AppError: Error, Equatable, Sendable {
         case "note_not_found", "scheduled_not_found": self = .noteNotFound
         case "not_note_author", "not_date_owner", "cannot_react_to_own_note": self = .notAuthor
         case "version_conflict": self = .versionConflict
-        case "moment_not_found": self = .momentUnavailable
-        case "not_ready", "not_revealed": self = .momentNotReady
-        case "moment_closed": self = .momentClosed
-        case "already_revealed": self = .momentAlreadyRevealed
-        case "invalid_answer": self = .invalidAnswer(limit: TogetherRules.answerLimit)
         case "deliver_at_too_soon": self = .deliveryTooSoon
         case "deliver_at_too_far": self = .deliveryTooFar
         case "scheduled_not_pending": self = .scheduleNotEditable

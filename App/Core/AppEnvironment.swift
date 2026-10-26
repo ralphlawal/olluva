@@ -23,7 +23,6 @@ final class AppEnvironment {
     let memories: MemoriesStore
     let dates: DatesStore
     let schedule: ScheduleStore
-    let together: TogetherStore
     let purchases: PurchaseStore
     let notifications: NotificationCoordinator
     let settings: LocalSettings
@@ -99,7 +98,6 @@ final class AppEnvironment {
         memories = MemoriesStore(backend: self.backend)
         dates = DatesStore(backend: self.backend)
         schedule = ScheduleStore(backend: self.backend, media: media)
-        together = TogetherStore(backend: self.backend, defaults: defaults)
         purchases = PurchaseStore(backend: self.backend, session: session)
         notifications = NotificationCoordinator(
             backend: self.backend, environment: configuration.pushEnvironment, defaults: defaults,
@@ -197,8 +195,7 @@ final class AppEnvironment {
         async let dates: Void = dates.load(coupleID: coupleID)
         async let memories: Void = memories.load(coupleID: coupleID)
         async let schedule: Void = schedule.load()
-        async let together: Void = together.load()
-        _ = await (notes, dates, memories, schedule, together)
+        _ = await (notes, dates, memories, schedule)
     }
 
     private func handle(_ event: SpaceEvent, coupleID: UUID) async {
@@ -211,8 +208,6 @@ final class AppEnvironment {
             await memories.load(coupleID: coupleID)
         case .datesChanged:
             await dates.load(coupleID: coupleID)
-        case .togetherChanged:
-            await together.refresh()
         case .resynchronise:
             await session.refresh()
             if session.phase == .paired { await loadContent(coupleID: coupleID) }
@@ -226,7 +221,6 @@ final class AppEnvironment {
         guard session.phase == .paired, let coupleID = session.coupleID else { return }
         await notes.load(coupleID: coupleID)
         await schedule.load()
-        await together.refresh()
         notes.retryAllPending()
     }
 
@@ -281,7 +275,6 @@ final class AppEnvironment {
         memories.reset()
         dates.reset()
         schedule.reset()
-        together.reset()
         media.clear()
         drafts.clear()
         router.reset()
@@ -322,14 +315,12 @@ enum UnconfiguredBackend {
         let stub = Stub()
         return Backend(
             auth: stub, profiles: stub, couples: stub, notes: stub, realtime: stub, media: stub,
-            memories: stub, dates: stub, schedule: stub, notifications: stub, entitlements: stub,
-            together: stub, isDemo: false
+            memories: stub, dates: stub, schedule: stub, notifications: stub, entitlements: stub, isDemo: false
         )
     }
 
     private final class Stub: Sendable, AuthRepository, ProfileRepository, CoupleRepository, NoteRepository, RealtimeRepository,
-        MediaRepository, MemoryRepository, DatesRepository, ScheduleRepository, NotificationRepository, EntitlementRepository,
-        TogetherRepository {
+        MediaRepository, MemoryRepository, DatesRepository, ScheduleRepository, NotificationRepository, EntitlementRepository {
         private var fail: AppError { .notConfigured }
 
         func restoreSession() async -> AuthState { .signedOut }
@@ -360,13 +351,6 @@ enum UnconfiguredBackend {
         func markSeen(noteID: UUID) async throws { throw fail }
         func reactions(coupleID: UUID) async throws -> [Reaction] { throw fail }
         func setReaction(noteID: UUID, kind: ReactionKind?) async throws { throw fail }
-        func today() async throws -> TogetherMoment? { throw fail }
-        func submit(momentID: UUID, answer: String) async throws -> TogetherMoment { throw fail }
-        func reveal(momentID: UUID) async throws -> TogetherMoment { throw fail }
-        func moment(id: UUID) async throws -> TogetherMoment { throw fail }
-        func history(before: DayDate?, limit: Int) async throws -> [TogetherMoment] { throw fail }
-        func saveToMemories(momentID: UUID) async throws -> UUID { throw fail }
-        func removeFromMemories(momentID: UUID) async throws { throw fail }
         func events(coupleID: UUID) -> AsyncStream<SpaceEvent> { AsyncStream { $0.finish() } }
         func upload(_ data: Data, to path: String, contentType: String) async throws { throw fail }
         func download(path: String) async throws -> Data { throw fail }

@@ -82,8 +82,6 @@ final class AppRouter {
     var presentedNoteID: UUID?
     var isComposing = false
     var isShowingPaywall = false
-    /// The daily question is on screen (pushed from Today).
-    var isShowingTogether = false
     /// An invitation code that arrived through a link, waiting to be previewed.
     var pendingInviteCode: String?
 
@@ -101,16 +99,12 @@ final class AppRouter {
             presentedNoteID = id
         case .join(let code):
             pendingInviteCode = code
-        case .together:
-            tab = .today
-            isShowingTogether = true
         }
     }
 
     func reset() {
         tab = .today
         presentedNoteID = nil
-        isShowingTogether = false
         isComposing = false
         isShowingPaywall = false
     }

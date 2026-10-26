@@ -18,7 +18,7 @@ public final class LocalBackend: @unchecked Sendable {
         Backend(
             auth: self, profiles: self, couples: self, notes: self, realtime: self, media: self,
             memories: self, dates: self, schedule: self, notifications: self, entitlements: self,
-            together: self, isDemo: true
+            isDemo: true
         )
     }
 
@@ -812,116 +812,5 @@ extension LocalBackend: EntitlementRepository {
     public func submitTransaction(jws: String) async throws -> Entitlement {
         await pause()
         return try await entitlement()
-    }
-}
-
-// MARK: - Together
-
-extension LocalBackend: TogetherRepository {
-    public func today() async throws -> TogetherMoment? {
-        await pause()
-        let uid = try user()
-        return try world.mutate { state, now in
-            guard let coupleID = state.togetherCoupleID(of: uid) else { return nil }
-            let index = state.togetherIndex(coupleID: coupleID, day: DayDate(now))
-            return state.togetherView(state.together[index], for: uid)
-        }
-    }
-
-    public func submit(momentID: UUID, answer: String) async throws -> TogetherMoment {
-        await pause()
-        let uid = try user()
-        guard TogetherRules.isValid(answer) else { throw AppError.invalidAnswer(limit: TogetherRules.answerLimit) }
-        return try world.mutate { state, now in
-            let index = try Self.togetherIndex(momentID, for: uid, in: state)
-            let moment = state.together[index]
-            guard moment.revealedAt == nil else { throw AppError.momentAlreadyRevealed }
-            let isEditOfReady = moment.answers[uid] != nil && moment.answers.count == 2
-            guard moment.day == DayDate(now) || isEditOfReady else { throw AppError.momentClosed }
-            state.together[index].answers[uid] = TogetherRules.cleaned(answer)
-            state.pendingEvents.append((moment.coupleID, .togetherChanged))
-            return state.togetherView(state.together[index], for: uid)
-        }
-    }
-
-    public func reveal(momentID: UUID) async throws -> TogetherMoment {
-        await pause()
-        let uid = try user()
-        return try world.mutate { state, now in
-            let index = try Self.togetherIndex(momentID, for: uid, in: state)
-            guard state.together[index].answers.count == 2 else { throw AppError.momentNotReady }
-            if state.together[index].revealedAt == nil {
-                state.together[index].revealedAt = now
-                state.pendingEvents.append((state.together[index].coupleID, .togetherChanged))
-            }
-            return state.togetherView(state.together[index], for: uid)
-        }
-    }
-
-    public func moment(id: UUID) async throws -> TogetherMoment {
-        await pause()
-        let uid = try user()
-        return try world.read { state, _ in
-            let index = try Self.togetherIndex(id, for: uid, in: state)
-            return state.togetherView(state.together[index], for: uid)
-        }
-    }
-
-    public func history(before: DayDate?, limit: Int) async throws -> [TogetherMoment] {
-        await pause()
-        let uid = try user()
-        return try world.read { state, _ in
-            guard let coupleID = state.togetherCoupleID(of: uid) else { return [] }
-            return state.together
-                .filter { $0.coupleID == coupleID && $0.answers.count == 2 }
-                .filter { moment in before.map { moment.day < $0 } ?? true }
-                .sorted { $0.day > $1.day }
-                .prefix(max(1, min(limit, 50)))
-                .map { state.togetherView($0, for: uid) }
-        }
-    }
-
-    public func saveToMemories(momentID: UUID) async throws -> UUID {
-        await pause()
-        let uid = try user()
-        return try world.mutate { state, now in
-            let index = try Self.togetherIndex(momentID, for: uid, in: state)
-            let moment = state.together[index]
-            guard moment.revealedAt != nil else { throw AppError.momentNotReady }
-            if let existing = state.memories.first(where: { $0.togetherMomentID == momentID }) { return existing.id }
-            let limit = state.entitlement(for: uid).limits.memories
-            guard state.memories.filter({ $0.coupleID == moment.coupleID }).count < limit else { throw AppError.memoryLimitReached }
-            let memory = Memory(
-                id: UUID(), coupleID: moment.coupleID, createdBy: uid, kind: .moment,
-                title: LocalWorld.State.togetherQuestions[moment.questionIndex].body,
-                caption: "A question you both answered.", togetherMomentID: momentID,
-                occurredOn: moment.day, createdAt: now
-            )
-            state.memories.append(memory)
-            state.pendingEvents.append((moment.coupleID, .memoriesChanged))
-            state.pendingEvents.append((moment.coupleID, .togetherChanged))
-            return memory.id
-        }
-    }
-
-    public func removeFromMemories(momentID: UUID) async throws {
-        await pause()
-        let uid = try user()
-        try world.mutate { state, _ in
-            let index = try Self.togetherIndex(momentID, for: uid, in: state)
-            let coupleID = state.together[index].coupleID
-            state.memories.removeAll { $0.togetherMomentID == momentID }
-            state.pendingEvents.append((coupleID, .memoriesChanged))
-            state.pendingEvents.append((coupleID, .togetherChanged))
-        }
-    }
-
-    /// A moment is found only by a member of the couple it belongs to; to
-    /// anyone else it does not exist.
-    private static func togetherIndex(_ id: UUID, for user: UUID, in state: LocalWorld.State) throws -> Int {
-        guard let coupleID = state.togetherCoupleID(of: user),
-              let index = state.together.firstIndex(where: { $0.id == id && $0.coupleID == coupleID })
-        else { throw AppError.momentUnavailable }
-        return index
     }
 }

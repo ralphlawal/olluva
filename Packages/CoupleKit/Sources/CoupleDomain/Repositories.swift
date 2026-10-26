@@ -86,8 +86,6 @@ public enum SpaceEvent: Equatable, Sendable {
     case spaceChanged
     case memoriesChanged
     case datesChanged
-    /// A daily moment moved on: someone answered, or it was revealed.
-    case togetherChanged
     /// The live connection was re-established; anything may have been missed.
     case resynchronise
 }
@@ -111,23 +109,6 @@ public protocol MemoryRepository: Sendable {
     func add(_ moment: NewMoment, coupleID: UUID) async throws -> Memory
     func update(id: UUID, title: String, caption: String, occurredOn: DayDate) async throws -> Memory
     func deleteMemory(id: UUID) async throws
-}
-
-/// The daily question. Every method returns the caller's own view: the
-/// partner's answer is absent until the moment has been revealed.
-public protocol TogetherRepository: Sendable {
-    /// Today's moment, or nil when the caller has no partner yet.
-    func today() async throws -> TogetherMoment?
-    /// Submits the caller's answer, or replaces it. Refused once revealed.
-    func submit(momentID: UUID, answer: String) async throws -> TogetherMoment
-    /// Opens a moment for both people. Needs both answers; safe to repeat.
-    func reveal(momentID: UUID) async throws -> TogetherMoment
-    func moment(id: UUID) async throws -> TogetherMoment
-    /// Moments both people answered, newest first.
-    func history(before: DayDate?, limit: Int) async throws -> [TogetherMoment]
-    /// Idempotent per moment, whoever saves it.
-    func saveToMemories(momentID: UUID) async throws -> UUID
-    func removeFromMemories(momentID: UUID) async throws
 }
 
 public protocol DatesRepository: Sendable {
@@ -175,7 +156,6 @@ public struct Backend: Sendable {
     public let schedule: any ScheduleRepository
     public let notifications: any NotificationRepository
     public let entitlements: any EntitlementRepository
-    public let together: any TogetherRepository
     /// True for the in-memory backend. Nothing leaves the device and nothing
     /// is kept; the app says so wherever it matters.
     public let isDemo: Bool
@@ -184,10 +164,8 @@ public struct Backend: Sendable {
         auth: any AuthRepository, profiles: any ProfileRepository, couples: any CoupleRepository,
         notes: any NoteRepository, realtime: any RealtimeRepository, media: any MediaRepository,
         memories: any MemoryRepository, dates: any DatesRepository, schedule: any ScheduleRepository,
-        notifications: any NotificationRepository, entitlements: any EntitlementRepository,
-        together: any TogetherRepository, isDemo: Bool
+        notifications: any NotificationRepository, entitlements: any EntitlementRepository, isDemo: Bool
     ) {
-        self.together = together
         self.auth = auth
         self.profiles = profiles
         self.couples = couples

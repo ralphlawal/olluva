@@ -22,16 +22,6 @@ public final class LocalWorld: @unchecked Sendable {
         var ended = false
     }
 
-    /// One day's question for a couple, with who has said what.
-    struct Together {
-        var id: UUID
-        var coupleID: UUID
-        var day: DayDate
-        var questionIndex: Int
-        var answers: [UUID: String] = [:]
-        var revealedAt: Date?
-    }
-
     struct Invitation {
         enum Status { case pending, accepted, declined, revoked }
         var id: UUID
@@ -58,7 +48,6 @@ public final class LocalWorld: @unchecked Sendable {
         var notes: [Note] = []
         var reactions: [Reaction] = []
         var memories: [Memory] = []
-        var together: [Together] = []
         var dates: [ImportantDate] = []
         var scheduled: [Scheduled] = []
         var preferences: [UUID: NotificationPreferences] = [:]
@@ -227,47 +216,6 @@ public final class LocalWorld: @unchecked Sendable {
         }
     }
 
-    /// Has `user` answer today's question, as their own phone would. Used to
-    /// play the partner in demo mode and in tests.
-    @discardableResult
-    public func answerTogether(as user: UUID, _ answer: String) -> Bool {
-        arrange { state, now in
-            guard let coupleID = state.activeCoupleID(of: user) else { return false }
-            let index = state.togetherIndex(coupleID: coupleID, day: DayDate(now))
-            guard state.together[index].revealedAt == nil else { return false }
-            state.together[index].answers[user] = answer
-            state.pendingEvents.append((coupleID, .togetherChanged))
-            return true
-        }
-    }
-
-    /// Opens today's moment, as either person tapping "Open together" would.
-    @discardableResult
-    public func revealTogether(as user: UUID) -> Bool {
-        arrange { state, now in
-            guard let coupleID = state.activeCoupleID(of: user) else { return false }
-            let index = state.togetherIndex(coupleID: coupleID, day: DayDate(now))
-            guard state.together[index].answers.count == 2 else { return false }
-            if state.together[index].revealedAt == nil { state.together[index].revealedAt = now }
-            state.pendingEvents.append((coupleID, .togetherChanged))
-            return true
-        }
-    }
-
-    /// Moves every moment `days` into the past, as if that long had gone by.
-    public func ageTogether(days: Int) {
-        arrange { state, _ in
-            for index in state.together.indices {
-                let day = state.together[index].day
-                var components = DateComponents()
-                components.year = day.year
-                components.month = day.month
-                components.day = day.day - days
-                if let date = Calendar.current.date(from: components) { state.together[index].day = DayDate(date) }
-            }
-        }
-    }
-
     public func addMemory(_ memory: Memory) {
         arrange { state, _ in state.memories.append(memory) }
     }
@@ -339,51 +287,6 @@ public final class LocalWorld: @unchecked Sendable {
 }
 
 extension LocalWorld.State {
-    /// The questions the in-memory backend asks. The real library lives in the
-    /// database; this is only so demo mode and tests have something to show.
-    static let togetherQuestions: [(category: String, body: String)] = [
-        ("appreciation", "What’s one little thing I did recently that made you happy?"),
-        ("memories", "What’s a memory of us that always makes you smile?"),
-        ("future", "What’s something new you’d love us to try together?"),
-        ("memories", "When did you feel especially close to me?"),
-        ("everyday", "What’s one small thing we could do to make this week better?"),
-        ("appreciation", "What’s something about us that you’re grateful for?"),
-    ]
-
-    /// The paired couple a person is in, as the Together functions require.
-    func togetherCoupleID(of user: UUID) -> UUID? {
-        guard let id = activeCoupleID(of: user), couples[id]?.members.count == 2 else { return nil }
-        return id
-    }
-
-    /// Finds the couple's moment for a day, creating it on first asking.
-    mutating func togetherIndex(coupleID: UUID, day: DayDate) -> Int {
-        if let index = together.firstIndex(where: { $0.coupleID == coupleID && $0.day == day }) { return index }
-        let asked = together.filter { $0.coupleID == coupleID }.count
-        together.append(LocalWorld.Together(
-            id: UUID(), coupleID: coupleID, day: day, questionIndex: asked % Self.togetherQuestions.count
-        ))
-        return together.count - 1
-    }
-
-    /// One person's view of a moment: the same rule the server applies.
-    func togetherView(_ moment: LocalWorld.Together, for user: UUID) -> TogetherMoment {
-        let mine = moment.answers[user]
-        let theirs = moment.answers.first { $0.key != user }?.value
-        let revealed = moment.revealedAt != nil
-        let status: TogetherMoment.Status = revealed ? .revealed
-            : (mine != nil && theirs != nil) ? .ready
-            : mine != nil ? .waiting : .open
-        let question = Self.togetherQuestions[moment.questionIndex]
-        return TogetherMoment(
-            id: moment.id, day: moment.day,
-            question: .init(id: moment.questionIndex + 1, category: question.category, body: question.body),
-            status: status, myAnswer: mine, partnerAnswered: theirs != nil,
-            partnerAnswer: revealed ? theirs : nil, revealedAt: moment.revealedAt,
-            memoryID: memories.first { $0.togetherMomentID == moment.id }?.id
-        )
-    }
-
     func activeCoupleID(of user: UUID) -> UUID? {
         couples.values.first { !$0.ended && $0.members.contains(user) }?.space.id
     }

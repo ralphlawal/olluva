@@ -23,6 +23,3 @@ Anyone who learns the code can create demo spaces up to the daily allowance. Tha
 ## Alternatives rejected
 - **Demo mode in Release builds**: ships a fake backend to every user and breaks the rule that release builds never simulate.
 - **A video in the review notes**: no code, but reviewers generally want to use the app themselves.
-
-## Together
-From 1.1 the demo partner also answers the daily question (migration 20261026000100), with one fixed answer per category, so a reviewer can take a moment all the way to being opened together. Verified against the hosted project.

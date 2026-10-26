@@ -254,16 +254,6 @@ struct MemoryDetailView: View {
                     if !current.caption.isEmpty {
                         Text(current.caption).font(Typo.body).foregroundStyle(palette.ink)
                     }
-                    if let momentID = current.togetherMomentID {
-                        // A question you both answered: show what you each said.
-                        NavigationLink {
-                            TogetherMomentDetailView(momentID: momentID)
-                        } label: {
-                            HomeLinkRow(symbol: "bubble.left.and.bubble.right", title: "Read both answers")
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("memory.together")
-                    }
                     if let error = action.error { NoticeBanner(error.message) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
